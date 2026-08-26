@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.keyboard3.ui
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,68 +26,63 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.DpSize
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.keyboard3.ImeController
-import dev.patrickgold.florisboard.ime.window.LocalWindowController
-import dev.patrickgold.jetpref.datastore.model.collectAsState
-import org.florisboard.lib.compose.toMm
-import org.k3lp.runtime.doComputeLayout
+import dev.patrickgold.florisboard.lib.toIntOffset
 
 @Composable
 fun TouchKeyboardBox(
     imeController: ImeController,
     modifier: Modifier = Modifier,
-) = with(LocalDensity.current) {
+) {
     BoxWithConstraints(
         modifier = modifier
-            .fillMaxWidth()
-            .height(FlorisImeSizing.keyboardUiHeight()),
+            .fillMaxWidth(),
     ) {
         val prefs by FlorisPreferenceStore
-        val debugShowTouchBoundaries by prefs.devtools.showKeyTouchBoundaries.collectAsState()
+        val density = LocalDensity.current
 
-        val keyboardWidth = constraints.maxWidth
-        val keyboardHeight = constraints.maxHeight
-
-        val windowController = LocalWindowController.current
-        val windowSpec by windowController.activeWindowSpec.collectAsState()
+        val keyboardWidthDp = with(density) { constraints.maxWidth.toDp() }
+        val keyboardRowHeightDp = FlorisImeSizing.keyboardRowBaseHeight
 
         val imeState by imeController.activeState.collectAsState()
-        val model by remember { derivedStateOf { imeState.model } }
+        val model by remember { derivedStateOf(referentialEqualityPolicy()) { imeState.model } }
         val touchLayerId by remember { derivedStateOf { imeState.touchLayerId } }
 
-        val computedLayout = remember(touchLayerId, model, keyboardWidth, keyboardHeight, maxWidth) {
-            doComputeLayout(model, keyboardWidth, keyboardHeight, maxWidth.toMm().toInt(), touchLayerId)
+        val computedLayout = remember(model, density, keyboardWidthDp, keyboardRowHeightDp, touchLayerId) {
+            doComputeTouchKeyboard(model, density, keyboardWidthDp, keyboardRowHeightDp, touchLayerId)
         }
+        val computedLayoutState = rememberUpdatedState(computedLayout)
 
         if (computedLayout == null) {
             Text("Computed layout is null :(")
             return@BoxWithConstraints
         }
-        for (computedKey in computedLayout.keys) {
-            if (computedKey.data.gap) {
-                continue
-            }
-            key(computedKey) {
-                val touchSize = DpSize(
-                    width = computedKey.width.toDp(),
-                    height = computedKey.height.toDp(),
-                )
-                val visibleSize = DpSize(
-                    width = touchSize.width - windowSpec.keyMarginH * 2,
-                    height = touchSize.height - windowSpec.keyMarginV * 2,
-                )
-                TouchKeyBox(
-                    computedKey,
-                    touchSize,
-                    visibleSize,
-                    imeController,
-                )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(with(density) { computedLayout.bounds.height.toDp() })
+                .touchKeyboardInput(
+                    imeController = imeController,
+                    resolveKey = { computedLayoutState.value?.findKeyByOffset(it.toIntOffset()) },
+                ),
+        ) {
+            for (computedKey in computedLayout.keys) {
+                if (computedKey.data.gap) {
+                    continue
+                }
+                key(computedKey) {
+                    TouchKeyBox(
+                        computedKey,
+                        imeController,
+                    )
+                }
             }
         }
     }

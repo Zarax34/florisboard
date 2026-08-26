@@ -37,6 +37,7 @@ import dev.patrickgold.florisboard.ime.smartbar.Smartbar
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionsOverflowPanel
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.imeController
+import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import org.florisboard.lib.android.readText
 import org.florisboard.lib.snygg.ui.SnyggIcon
@@ -88,6 +89,7 @@ fun TextInputLayout(
                             return "toString()"
                         }
                     }, xml))
+                    flogDebug { result.reports.toString() }
                     require(result is K3lpResult.Success)
                     imeController.updateState {
                         switchModel(result.data)
