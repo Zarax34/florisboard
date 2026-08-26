@@ -18,12 +18,12 @@ package dev.patrickgold.florisboard.ime.keyboard3.ui
 
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.unit.IntSize
+import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import org.florisboard.lib.compose.toMm
 import org.k3lp.lib.text.K3StringOrDescriptor
 import org.k3lp.lib.text.asK3String
@@ -33,18 +33,17 @@ import org.k3lp.model.key.K3Key
 import org.k3lp.model.layer.K3LayerId
 import kotlin.math.roundToInt
 
-const val PRECISION_FACTOR = 1000
-
 data class TouchKeyboard(
-    val bounds: IntRect,
-    val keys: List<TouchKey>,
+    val bounds: Rect,
+    val layers: Map<K3LayerId, TouchLayer>,
 ) {
-    fun findKeyByOffset(offset: IntOffset): TouchKey? {
-        if (!bounds.contains(offset)) {
+    fun findKey(layerId: K3LayerId, position: Offset): TouchKey? {
+        val layer = layers[layerId]
+        if (layer == null || !bounds.contains(position)) {
             return null
         }
-        for (key in keys) {
-            if (key.bounds.contains(offset)) {
+        for (key in layer.keys) {
+            if (key.bounds.contains(position)) {
                 return key
             }
         }
@@ -52,8 +51,16 @@ data class TouchKeyboard(
     }
 }
 
+data class TouchLayer(
+    val keys: List<TouchKey>,
+) {
+    companion object {
+        val Empty = TouchLayer(emptyList())
+    }
+}
+
 data class TouchKey(
-    val bounds: IntRect,
+    val bounds: Rect,
     val label: K3StringOrDescriptor,
     val data: K3Key,
     val flick: K3Flick?,
@@ -65,78 +72,92 @@ fun doComputeTouchKeyboard(
     density: Density,
     rowWidthDp: Dp,
     rowHeightDp: Dp,
-    layerId: K3LayerId,
-): TouchKeyboard? {
+): TouchKeyboard {
     val deviceWidthMm = with(density) { rowWidthDp.toMm() }
-    val layerList = model.layersByForm.touch.lastOrNull { it.minDeviceWidth <= deviceWidthMm } ?: return null
-    val layer = layerList.layers[layerId] ?: return null
-
-    val rows = layer.rows.map {
-        it.map { keyId ->
-            val key = model.keys.byKeyId[keyId]
-            requireNotNull(key) { "unexpected runtime error: model contract broken" }
-        }
+    val layers = model.layersByForm.touch.lastOrNull { it.minDeviceWidth <= deviceWidthMm }?.layers
+    val rowCount = layers?.maxOf { (_, layer) -> layer.rows.size }?.coerceAtLeast(4) ?: 4
+    val touchKeyboardBounds = Rect(
+        offset = Offset.Zero,
+        size = Size(
+            width = with(density) { rowWidthDp.toPx() },
+            height = with(density) { (rowHeightDp * rowCount).toPx() },
+        )
+    )
+    if (layers == null) {
+        return TouchKeyboard(
+            bounds = touchKeyboardBounds,
+            layers = mapOf(
+                K3LayerId.BASE to TouchLayer.Empty,
+            ),
+        )
     }
-    val totalHeightDp = rowHeightDp * rows.size.coerceAtLeast(4)
-    val totalWidthPx = with(density) { rowWidthDp.toPx() }.toInt()
-    val totalHeightPx = with(density) { totalHeightDp.toPx() }.toInt()
 
-    val desiredKeyHeightPx = totalHeightPx / rows.size
-    val keyHeightRemainder = totalHeightPx % rows.size
-    val computedKeys = mutableListOf<TouchKey>()
-    var currentY = 0
-    for ((rowIndex, row) in rows.withIndex()) {
-        val desiredWeightSum = 1 * 10 * PRECISION_FACTOR
-        val fullWeightSum = row.sumOf { it.width.times(PRECISION_FACTOR).roundToInt() }
-        val stretchWeightSum = row.sumOf { if (it.stretch) it.width.times(PRECISION_FACTOR).roundToInt() else 0 }
-        val nonStretchSum = fullWeightSum - stretchWeightSum
-        val mayGrowKeys = fullWeightSum <= desiredWeightSum
-        val mayStretchKeys = mayGrowKeys && stretchWeightSum != 0
-        val desiredKeyWidth = when {
-            mayGrowKeys -> totalWidthPx / 10
-            else -> totalWidthPx * desiredWeightSum / fullWeightSum / 10
-        }
-        val desiredStretchKeyWidth = when {
-            mayGrowKeys && mayStretchKeys -> {
-                totalWidthPx * (desiredWeightSum - nonStretchSum) / desiredWeightSum
+    val touchLayers = layers.mapValues { (_, layer) ->
+        val rows = layer.rows.map {
+            it.map { keyId ->
+                val key = model.keys.byKeyId[keyId]
+                requireNotNull(key) { "unexpected runtime error: model contract broken" }
             }
-            else -> 0
         }
-        var keyWidthSum = 0
-        val keyWidths = mutableListOf<Int>()
-        for (key in row) {
-            val keyWidthPx = when {
-                mayStretchKeys && key.stretch -> desiredStretchKeyWidth * key.width.times(PRECISION_FACTOR).roundToInt() / stretchWeightSum
-                else -> desiredKeyWidth * key.width.times(PRECISION_FACTOR).roundToInt() / PRECISION_FACTOR
+        val keyHeightPx = touchKeyboardBounds.height / rows.size
+        val touchKeys = mutableListOf<TouchKey>()
+        var currentY = 0f
+        for (row in rows) {
+            val desiredWeightSum = 10f
+            val fullWeightSum = row.fold(0f) { acc, key -> acc + key.width.toFloat() }
+            val stretchWeightSum = row.fold(0f) { acc, key -> acc + (if (key.stretch) key.width.toFloat() else 0f) }
+            val nonStretchSum = fullWeightSum - stretchWeightSum
+            val mayGrowKeys = fullWeightSum <= desiredWeightSum
+            val mayStretchKeys = mayGrowKeys && stretchWeightSum != 0f
+            val desiredKeyWidth = when {
+                mayGrowKeys -> touchKeyboardBounds.width / 10
+                else -> touchKeyboardBounds.width * desiredWeightSum / fullWeightSum / 10
             }
-            keyWidths.add(keyWidthPx)
-            keyWidthSum += keyWidthPx
+            val desiredStretchKeyWidth = when {
+                mayGrowKeys && mayStretchKeys -> {
+                    touchKeyboardBounds.width * (desiredWeightSum - nonStretchSum) / desiredWeightSum
+                }
+                else -> 0f
+            }
+            var keyWidthSum = 0f
+            val keyWidths = mutableListOf<Float>()
+            for (key in row) {
+                val keyWidthPx = when {
+                    mayStretchKeys && key.stretch -> desiredStretchKeyWidth * key.width.toFloat()
+                        .roundToInt() / stretchWeightSum
+
+                    else -> desiredKeyWidth * key.width.toFloat()
+                }
+                keyWidths.add(keyWidthPx)
+                keyWidthSum += keyWidthPx
+            }
+            var currentX = when {
+                mayGrowKeys && !mayStretchKeys -> (touchKeyboardBounds.width - keyWidthSum + 1) / 2
+                else -> 0f
+            }
+            for ((i, key) in row.withIndex()) {
+                val keyWidthPx = keyWidths[i]
+                val keyBoundsPx = Rect(
+                    offset = Offset(currentX, currentY),
+                    size = Size(keyWidthPx, keyHeightPx),
+                )
+                val touchKey = TouchKey(
+                    bounds = keyBoundsPx,
+                    label = doComputeKeyDisplay(model, key),
+                    data = key,
+                    flick = key.flickId?.let { model.flicks.byFlickId[it] },
+                    numPointersFocused = mutableIntStateOf(0),
+                )
+                touchKeys.add(touchKey)
+                currentX += keyWidthPx
+            }
+            currentY += keyHeightPx
         }
-        var currentX = when {
-            mayGrowKeys && !mayStretchKeys -> (totalWidthPx - keyWidthSum + 1) / 2
-            else -> 0
-        }
-        val keyHeightPx = desiredKeyHeightPx + if (rowIndex < keyHeightRemainder) 1 else 0
-        for ((i, key) in row.withIndex()) {
-            val keyWidthPx = keyWidths[i]
-            val touchKey = TouchKey(
-                bounds = IntRect(
-                    offset = IntOffset(currentX, currentY),
-                    size = IntSize(keyWidthPx, keyHeightPx),
-                ),
-                label = doComputeKeyDisplay(model, key),
-                data = key,
-                flick = key.flickId?.let { model.flicks.byFlickId[it] },
-                numPointersFocused = mutableIntStateOf(0),
-            )
-            computedKeys.add(touchKey)
-            currentX += keyWidthPx
-        }
-        currentY += keyHeightPx
+        TouchLayer(touchKeys.toList())
     }
     return TouchKeyboard(
-        bounds = IntRect(IntOffset.Zero, IntSize(totalWidthPx, totalHeightPx)),
-        keys = computedKeys.toList(),
+        bounds = touchKeyboardBounds,
+        layers = touchLayers,
     )
 }
 

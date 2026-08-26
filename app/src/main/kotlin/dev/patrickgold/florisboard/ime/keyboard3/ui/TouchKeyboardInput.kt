@@ -16,11 +16,12 @@
 
 package dev.patrickgold.florisboard.ime.keyboard3.ui
 
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -34,6 +35,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
 import dev.patrickgold.florisboard.ime.keyboard3.ImeController
+import kotlinx.coroutines.launch
 import kotlin.math.pow
 
 private data class PeekLine(
@@ -43,66 +45,80 @@ private data class PeekLine(
 )
 
 fun Modifier.touchKeyboardInput(
+    touchKeyboard: TouchKeyboard,
     imeController: ImeController,
-    resolveKey: (Offset) -> TouchKey?,
 ): Modifier = composed {
+    val scope = rememberCoroutineScope()
     val density = LocalDensity.current
+    // TODO make configurable
     val peekLineWidthPx = with(density) { 8.dp.toPx() }
     val peekDistanceSqMin = with(density) { 30.dp.toPx().pow(2) }
-
     var currPeekLine by remember { mutableStateOf<PeekLine?>(null) }
 
     pointerInput(Unit) {
-        while (true) {
-            awaitPointerEventScope {
-                val down = awaitFirstDown()
-                val downKey = resolveKey(down.position) ?: return@awaitPointerEventScope
-                down.consume()
-                val downLayerId = imeController.snapshotState().touchLayerId
-                val peekLayerId = downKey.data.layerId
-                if (peekLayerId != null) {
-                    imeController.updateStateBlocking {
+        awaitEachGesture {
+            // TODO we need to get rid of the first/primary down mindset
+            //   if multiple pointers arrive at the same time and release again both meys must be entered
+            //   else the users view is that some keys magically are gone
+            val down = awaitFirstDown()
+            val downLayerId = imeController.snapshotState().touchLayerId
+            val downKey = touchKeyboard.findKey(downLayerId, down.position) ?: return@awaitEachGesture
+            down.consume()
+
+            val peekLayerId = downKey.data.layerId
+            val isPeekLayerGesture = peekLayerId != null
+
+            if (isPeekLayerGesture) {
+                scope.launch {
+                    imeController.updateState {
                         switchTouchLayer(peekLayerId)
                     }
                 }
-                while (true) {
-                    val event = awaitPointerEvent()
-                    val curr = event.changes.fastFirstOrNull { it.id == down.id }
-                    if (curr == null) {
-                        // pointer was cancelled
-                        if (peekLayerId != null) {
-                            imeController.updateStateBlocking {
+            }
+
+            while (true) {
+                val event = awaitPointerEvent()
+                val curr = event.changes.fastFirstOrNull { it.id == down.id }
+                if (curr == null) {
+                    // pointer was cancelled
+                    if (isPeekLayerGesture) {
+                        scope.launch {
+                            imeController.updateState {
                                 switchTouchLayer(downLayerId)
                             }
                         }
-                        break
                     }
-                    if (peekLayerId != null) {
-                        val distanceSq = (curr.position - down.position).getDistanceSquared()
-                        if (currPeekLine != null || distanceSq >= peekDistanceSqMin) {
-                            val touchKey = resolveKey(curr.position)
-                            currPeekLine = PeekLine(touchKey, down.position, curr.position)
-                        }
+                    break
+                }
+                var newPeekLine = currPeekLine
+                if (isPeekLayerGesture) {
+                    val distanceSq = (curr.position - down.position).getDistanceSquared()
+                    if (newPeekLine != null || distanceSq >= peekDistanceSqMin) {
+                        val touchKey = touchKeyboard.findKey(peekLayerId, curr.position)
+                        newPeekLine = PeekLine(touchKey, down.position, curr.position)
                     }
-                    if (curr.changedToUp()) {
-                        curr.consume()
-                        imeController.updateStateBlocking {
-                            if (peekLayerId != null) {
-                                if (currPeekLine != null) {
+                }
+                currPeekLine = newPeekLine
+                if (curr.changedToUp()) {
+                    curr.consume()
+                    scope.launch {
+                        imeController.updateState {
+                            if (isPeekLayerGesture) {
+                                if (newPeekLine != null) {
                                     switchTouchLayer(downLayerId)
-                                    currPeekLine?.touchKey?.data?.output?.let { emit(it) }
+                                    newPeekLine.touchKey?.data?.output?.let { emit(it) }
                                 }
                             } else {
                                 downKey.data.output?.let { emit(it) }
                             }
                         }
-                        break
-                    } else {
-                        curr.consume()
                     }
+                    break
+                } else {
+                    curr.consume()
                 }
-                currPeekLine = null
             }
+            currPeekLine = null
         }
     }
         .drawWithContent {

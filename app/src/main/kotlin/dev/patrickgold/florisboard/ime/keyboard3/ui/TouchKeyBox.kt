@@ -17,27 +17,22 @@
 package dev.patrickgold.florisboard.ime.keyboard3.ui
 
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.absoluteOffset
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationException
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.round
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
-import dev.patrickgold.florisboard.ime.keyboard3.ImeController
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.ime.window.LocalWindowController
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -46,18 +41,17 @@ import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggText
 import org.k3lp.lib.text.K3Descriptor
 import org.k3lp.lib.text.K3String
+import kotlin.math.roundToInt
 
 @Composable
 fun TouchKeyBox(
     touchKey: TouchKey,
-    imeController: ImeController,
 ) {
     val prefs by FlorisPreferenceStore
     val debugShowTouchBoundaries by prefs.devtools.showKeyTouchBoundaries.collectAsState()
 
     val windowController = LocalWindowController.current
     val windowSpec by windowController.activeWindowSpec.collectAsState()
-    val scope = rememberCoroutineScope()
 
 //    val attributes = mapOf(
 //        FlorisImeUi.Attr.Code to key.computedData.code,
@@ -70,24 +64,26 @@ fun TouchKeyBox(
     }
     val isSuitableForExtendedPopup: Boolean = !touchKey.data.longPressKeyIds.isNullOrEmpty()
 
-    Box(
+    SnyggBox(
+        FlorisImeUi.Key.elementName,
+        attributes = emptyMap(),
+        selector = selector,
         modifier = Modifier
-            .size(with(LocalDensity.current) { DpSize(touchKey.bounds.width.toDp(), touchKey.bounds.height.toDp()) })
-            .absoluteOffset { touchKey.bounds.topLeft }
+            .layout { measurable, _ ->
+                val width = touchKey.bounds.width.roundToInt()
+                val height = touchKey.bounds.height.roundToInt()
+                val offset = touchKey.bounds.topLeft.round()
+                val constraints = Constraints(width, width, height, height)
+                val placeable = measurable.measure(constraints)
+                layout(placeable.width, placeable.height) { placeable.place(offset) }
+            }
             .padding(windowSpec.keyMarginH, windowSpec.keyMarginV),
     ) {
-        SnyggBox(
-            FlorisImeUi.Key.elementName,
-            attributes = emptyMap(),
-            selector = selector,
-            modifier = Modifier
-                .fillMaxSize(),
-        ) {
-            TouchKeyDisplay(
-                computedKey = touchKey,
-                modifier = Modifier.align(Alignment.Center),
-            )
-        }
+        TouchKeyDisplay(
+            computedKey = touchKey,
+            modifier = Modifier.align(Alignment.Center),
+        )
+    }
 
 //        if (isSuitableForBasicPopup && selector == SnyggSelector.PRESSED) {
 //            TouchKeySimplePopupBox(
@@ -107,7 +103,6 @@ fun TouchKeyBox(
 //                )
 //            }
 //        }
-    }
 }
 
 @Composable
