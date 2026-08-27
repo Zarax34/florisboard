@@ -21,10 +21,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
@@ -58,7 +57,12 @@ fun TouchKeyBox(
 //        FlorisImeUi.Attr.Mode to evaluator.keyboard.mode.toString(),
 //        FlorisImeUi.Attr.ShiftState to evaluator.state.inputShiftState.toString(),
 //    )
-    var selector by remember { mutableStateOf(SnyggSelector.NONE) }
+    val numPointersFocused by touchKey.numPointersFocused.collectAsState()
+    val selector by remember {
+        derivedStateOf {
+            if (numPointersFocused > 0) SnyggSelector.PRESSED else SnyggSelector.NONE
+        }
+    }
     val isSuitableForBasicPopup: Boolean = touchKey.data.output.let { output ->
         output != null && output is K3String
     }

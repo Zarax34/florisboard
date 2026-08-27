@@ -16,14 +16,12 @@
 
 package dev.patrickgold.florisboard.ime.keyboard3.ui
 
-import androidx.compose.runtime.MutableIntState
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import dev.patrickgold.florisboard.lib.devtools.flogDebug
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.florisboard.lib.compose.toMm
 import org.k3lp.lib.text.K3StringOrDescriptor
 import org.k3lp.lib.text.asK3String
@@ -33,7 +31,7 @@ import org.k3lp.model.key.K3Key
 import org.k3lp.model.layer.K3LayerId
 import kotlin.math.roundToInt
 
-data class TouchKeyboard(
+class TouchKeyboard(
     val bounds: Rect,
     val layers: Map<K3LayerId, TouchLayer>,
 ) {
@@ -51,7 +49,7 @@ data class TouchKeyboard(
     }
 }
 
-data class TouchLayer(
+class TouchLayer(
     val keys: List<TouchKey>,
 ) {
     companion object {
@@ -59,12 +57,12 @@ data class TouchLayer(
     }
 }
 
-data class TouchKey(
+class TouchKey(
     val bounds: Rect,
     val label: K3StringOrDescriptor,
     val data: K3Key,
     val flick: K3Flick?,
-    val numPointersFocused: MutableIntState,
+    val numPointersFocused: MutableStateFlow<Int>,
 )
 
 fun doComputeTouchKeyboard(
@@ -146,7 +144,7 @@ fun doComputeTouchKeyboard(
                     label = doComputeKeyDisplay(model, key),
                     data = key,
                     flick = key.flickId?.let { model.flicks.byFlickId[it] },
-                    numPointersFocused = mutableIntStateOf(0),
+                    numPointersFocused = MutableStateFlow(0),
                 )
                 touchKeys.add(touchKey)
                 currentX += keyWidthPx

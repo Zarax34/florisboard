@@ -26,15 +26,25 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.keyboard3.ImeController
 import org.k3lp.model.layer.K3LayerId
+import kotlin.math.pow
 import kotlin.math.roundToInt
 
 @Composable
@@ -58,6 +68,15 @@ fun TouchKeyboardBox(
             touchKeyboard.layers[imeState.touchLayerId] ?: touchKeyboard.layers[K3LayerId.BASE]
         )
 
+        // TODO make configurable
+        val peekLineWidthPx = with(density) { 8.dp.toPx() }
+        val peekDistanceSqMin = with(density) { 30.dp.toPx().pow(2) }
+
+        val scope = rememberCoroutineScope()
+        val pointerTracker = remember(touchKeyboard) {
+            PointerTracker(touchKeyboard, imeController, scope, peekDistanceSqMin)
+        }
+
         Box(
             modifier = Modifier
                 .layout { measurable, _ ->
@@ -67,10 +86,42 @@ fun TouchKeyboardBox(
                     val placeable = measurable.measure(constraints)
                     layout(placeable.width, placeable.height) { placeable.place(0, 0) }
                 }
-                .touchKeyboardInput(
-                    touchKeyboard = touchKeyboard,
-                    imeController = imeController,
-                ),
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            // TODO this pointer logic is VERY KEEN on sending up, even survives
+                            //  mouse leave&re-enter in the emulator => OOB checks
+                            val event = awaitPointerEvent()
+                            event.changes.fastForEach { change ->
+                                if (change.changedToDown()) {
+                                    pointerTracker.onDown(change)
+                                } else if (change.changedToUp()) {
+                                    pointerTracker.onUp(change)
+                                } else if (!change.isConsumed) {
+                                    pointerTracker.onMove(change)
+                                } else {
+                                    // TODO read docs how pointer cancellation works in jetpack compose
+                                    pointerTracker.onCancel(change.id)
+                                }
+                            }
+                        }
+                    }
+                }
+                .drawWithContent {
+                    drawContent()
+                    for ((_, trackedPointer) in pointerTracker.trackedPointers) {
+                        val peekLine = trackedPointer.peekLine
+                        if (trackedPointer.peekLine != null) {
+                            drawLine(
+                                color = Color.Red, // TODO customizable
+                                start = peekLine.start,
+                                end = peekLine.end,
+                                strokeWidth = peekLineWidthPx,
+                                cap = StrokeCap.Round,
+                            )
+                        }
+                    }
+                }
         ) {
             val touchLayer = activeTouchLayer
             if (touchLayer != null) {
