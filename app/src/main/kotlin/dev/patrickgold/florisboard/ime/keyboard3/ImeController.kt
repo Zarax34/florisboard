@@ -5,6 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
+import dev.patrickgold.florisboard.ime.text.key.KeyCode
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -19,6 +20,7 @@ package dev.patrickgold.florisboard.ime.keyboard3
 import android.icu.text.BreakIterator
 import android.view.KeyEvent
 import android.view.inputmethod.InputConnection
+import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
@@ -29,7 +31,6 @@ import dev.patrickgold.florisboard.ime.keyboard.IncognitoMode
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionType
 import dev.patrickgold.florisboard.ime.nlp.BreakIterators
-import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
@@ -39,6 +40,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.runBlocking
 import org.florisboard.lib.kotlin.collectIn
+import org.k3lp.lib.text.K3Descriptor
 import org.k3lp.lib.text.K3String
 import org.k3lp.lib.text.asK3String
 import org.k3lp.model.K3Model
@@ -252,7 +254,7 @@ class ImeController : K3InputMethod<ImeState, ImeEditor, ImeController.UpdateIme
                         }
                     )
             )
-            reset(initialSelection, initialSurrounding)
+            resetContent(initialSelection, initialSurrounding)
             expectedContentQueue.clear()
         }
 
@@ -262,13 +264,60 @@ class ImeController : K3InputMethod<ImeState, ImeEditor, ImeController.UpdateIme
                 flogDebug { "DEDUPLICATED!!1" }
                 return
             }
-            notifySelectionUpdated(newSelection, state.editor.getSurroundingText(50, 10))
+            resetContent(newSelection, state.editor.getSurroundingText(50, 10))
             expectedContentQueue.push(state.content)
         }
 
         override fun emitText(value: K3String) {
             super.emitText(value)
             expectedContentQueue.push(state.content)
+        }
+
+        override fun emitDescriptor(descriptor: K3Descriptor) {
+            val windowController = FlorisImeService.windowControllerOrNull()
+            when (descriptor) {
+                ImeActions.Delete -> emitForwardDelete()
+                ImeActions.Settings -> FlorisImeService.launchSettings()
+                ImeActions.ShowTextPanel -> {
+                    state = state.copy(
+                        flags = state.flags
+                            .withImeUiMode(ImeUiMode.TEXT),
+                    )
+                }
+                ImeActions.ShowMediaPanel -> {
+                    state = state.copy(
+                        flags = state.flags
+                            .withImeUiMode(ImeUiMode.MEDIA),
+                    )
+                }
+                ImeActions.ShowClipboardPanel -> {
+                    state = state.copy(
+                        flags = state.flags
+                            .withImeUiMode(ImeUiMode.CLIPBOARD),
+                    )
+                }
+                ImeActions.ShowImeWindow -> FlorisImeService.showUi()
+                ImeActions.HideImeWindow -> FlorisImeService.hideUi()
+                ImeActions.ToggleActionsEditor -> {
+                    state = state.copy(
+                        flags = state.flags
+                            .withActionsEditorVisible(!state.flags.isActionsEditorVisible),
+                    )
+                }
+                ImeActions.ToggleActionsOverflow -> {
+                    state = state.copy(
+                        flags = state.flags
+                            .withActionsOverflowVisible(!state.flags.isActionsOverflowVisible),
+                    )
+                }
+                ImeActions.ToggleCompactLayout -> windowController?.actions?.toggleCompactLayout()
+                ImeActions.ToggleFloatingWindow -> windowController?.actions?.toggleFloatingWindow()
+                ImeActions.ToggleResizeMode -> windowController?.editor?.toggleEnabled()
+                ImeActions.CompactLayoutToLeft -> windowController?.actions?.compactLayoutToLeft()
+                ImeActions.CompactLayoutToRight -> windowController?.actions?.compactLayoutToRight()
+                ImeActions.ExternalVoiceInput -> FlorisImeService.switchToVoiceInputMethod()
+                else -> super.emitDescriptor(descriptor)
+            }
         }
 
         override fun emitBackspace() {
@@ -332,7 +381,7 @@ class ImeController : K3InputMethod<ImeState, ImeEditor, ImeController.UpdateIme
         }
 
         fun handleFinishInputView() {
-            reset()
+            resetContent()
             state = state.copy(editor = ImeEditor.Disconnected)
             expectedContentQueue.clear()
         }

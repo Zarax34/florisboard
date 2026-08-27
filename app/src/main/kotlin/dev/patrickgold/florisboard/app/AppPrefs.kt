@@ -802,45 +802,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                     entry.keepAsIs()
                 }
             }
-            "smartbar__action_arrangement" -> {
-                fun migrateAction(action: QuickAction): QuickAction {
-                    return if (action is QuickAction.InsertKey && action.data.code == KeyCode.COMPACT_LAYOUT_TO_RIGHT) {
-                        action.copy(data = TextKeyData.TOGGLE_COMPACT_LAYOUT)
-                    } else {
-                        action
-                    }
-                }
 
+            // Migrate quick actions to K3Descriptors and insert missing actions
+            // Keep migration rule until: forever
+            "smartbar__action_arrangement" -> {
                 val arrangement = QuickActionJsonConfig.decodeFromString<QuickActionArrangement>(entry.rawValue)
-                var newArrangement = arrangement.copy(
-                    stickyAction = arrangement.stickyAction?.let{ migrateAction(it) },
-                    dynamicActions = arrangement.dynamicActions.map { migrateAction(it) },
-                    hiddenActions = arrangement.hiddenActions.map { migrateAction(it) },
-                )
-                if (QuickAction.InsertKey(TextKeyData.LANGUAGE_SWITCH) !in newArrangement) {
-                    newArrangement = newArrangement.copy(
-                        dynamicActions = newArrangement.dynamicActions.plus(QuickAction.InsertKey(TextKeyData.LANGUAGE_SWITCH))
-                    )
-                }
-                if (QuickAction.InsertKey(TextKeyData.FORWARD_DELETE) !in newArrangement) {
-                    newArrangement = newArrangement.copy(
-                        dynamicActions = newArrangement.dynamicActions.plus(QuickAction.InsertKey(TextKeyData.FORWARD_DELETE))
-                    )
-                }
-                if (QuickAction.InsertKey(TextKeyData.IME_HIDE_UI) !in newArrangement) {
-                    newArrangement = newArrangement.copy(
-                        dynamicActions = newArrangement.dynamicActions.plus(QuickAction.InsertKey(TextKeyData.IME_HIDE_UI))
-                    )
-                }
-                if (QuickAction.InsertKey(TextKeyData.TOGGLE_FLOATING_WINDOW) !in newArrangement) {
-                    newArrangement = newArrangement.copy(
-                        dynamicActions = newArrangement.dynamicActions.plus(QuickAction.InsertKey(TextKeyData.TOGGLE_FLOATING_WINDOW))
-                    )
-                }
-                if (QuickAction.InsertKey(TextKeyData.TOGGLE_RESIZE_MODE) !in newArrangement) {
-                    newArrangement = newArrangement.copy(
-                        dynamicActions = newArrangement.dynamicActions.plus(QuickAction.InsertKey(TextKeyData.TOGGLE_RESIZE_MODE))
-                    )
+                var newArrangement = arrangement.migrateToK3Descriptors()
+                QuickActionArrangement.Default.forEach { defaultAction ->
+                    if (defaultAction !in newArrangement) {
+                        newArrangement = newArrangement.copy(
+                            dynamicActions = newArrangement.dynamicActions.plus(defaultAction),
+                        )
+                    }
                 }
                 val json = QuickActionJsonConfig.encodeToString(newArrangement.distinct())
                 entry.transform(rawValue = json)

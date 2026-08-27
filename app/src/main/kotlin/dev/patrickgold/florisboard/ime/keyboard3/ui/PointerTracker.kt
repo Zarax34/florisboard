@@ -20,8 +20,10 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
+import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.ime.keyboard3.ImeController
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.k3lp.model.layer.K3LayerId
@@ -44,12 +46,14 @@ internal data class PeekLine(
 )
 
 internal class PointerTracker(
+    val prefs: FlorisPreferenceModel,
     val touchKeyboard: TouchKeyboard,
     val imeController: ImeController,
-    val scope: CoroutineScope,
     val peekDistanceSqMin: Float,
 ) {
     val trackedPointers = mutableStateMapOf<PointerId, TrackedPointer>()
+
+    val scope = CoroutineScope(Dispatchers.Main)
 
     fun onDown(down: PointerInputChange) {
         val downLayerId = imeController.snapshotState().touchLayerId

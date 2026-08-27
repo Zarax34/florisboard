@@ -308,8 +308,6 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
             QuickActionButton(
                 modifier = Modifier.padding(horizontal = 4.dp),
                 action = action,
-                // TODO state passing this way is not performant, but quick hack for now
-                imeState = imeState,
             )
         } else {
             Spacer(

@@ -123,7 +123,7 @@ fun TouchKeyDisplay(
             )
         }
         is K3Descriptor -> {
-            DescriptorIcon(
+            ImeIcon(
                 modifier = modifier
                     .wrapContentSize(),
                 descriptor = label,

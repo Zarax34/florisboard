@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -33,7 +32,9 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
+import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.imeController
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import org.florisboard.lib.compose.stringRes
@@ -45,6 +46,7 @@ import org.florisboard.lib.snygg.ui.SnyggText
 fun QuickActionsOverflowPanel() {
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
+    val imeController by context.imeController()
     val keyboardManager by context.keyboardManager()
 
     val actionArrangement by prefs.smartbar.actionArrangement.collectAsState()
@@ -72,18 +74,18 @@ fun QuickActionsOverflowPanel() {
             columns = GridCells.Adaptive(FlorisImeSizing.smartbarHeight.coerceAtLeast(1.dp) * 2.2f),
         ) {
             items(visibleActions) { action ->
-//                QuickActionButton(
-//                    action = action,
-//                    evaluator = evaluator,
-//                    type = QuickActionBarType.INTERACTIVE_TILE,
-//                )
+                QuickActionButton(
+                    action = action,
+                    type = QuickActionBarType.INTERACTIVE_TILE,
+                )
             }
             item(span = { GridItemSpan(maxLineSpan) }) {
                 SnyggButton(
                     elementName = FlorisImeUi.SmartbarActionsOverflowCustomizeButton.elementName,
                     onClick = {
-                        // TODO
-                        // keyboardManager.activeState.isActionsEditorVisible = true
+                        imeController.updateStateBlocking {
+                            emitDescriptor(ImeActions.ToggleActionsEditor)
+                        }
                     },
                     modifier = Modifier
                         .wrapContentWidth(),

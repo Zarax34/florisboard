@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -36,12 +37,15 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.compose.tooltip.PlainTooltip
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
-import dev.patrickgold.florisboard.ime.keyboard3.ImeState
+import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
+import dev.patrickgold.florisboard.ime.keyboard3.ui.ImeIcon
+import dev.patrickgold.florisboard.ime.keyboard3.ui.rememberDerivedEnabledState
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.imeController
+import org.florisboard.lib.snygg.SnyggQueryAttributes
 import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.ui.SnyggBox
-import org.florisboard.lib.snygg.ui.SnyggIcon
 import org.florisboard.lib.snygg.ui.SnyggText
 
 enum class QuickActionBarType {
@@ -55,19 +59,32 @@ fun QuickActionButton(
     action: QuickAction,
     modifier: Modifier = Modifier,
     type: QuickActionBarType = QuickActionBarType.INTERACTIVE_BUTTON,
-    imeState: ImeState,
 ) {
     val context = LocalContext.current
+    val imeController by context.imeController()
+    val imeState by imeController.activeState.collectAsState()
     val inputFeedbackController = LocalInputFeedbackController.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val isEnabled = type == QuickActionBarType.EDITOR_TILE // TODO || evaluator.evaluateEnabled(action.keyData())
+    val descriptor  = remember(action) {
+        if (action is QuickAction.InsertK3Descriptor) {
+            action.descriptor
+        } else {
+            ImeActions.NoopSpacer
+        }
+    }
+    val derivedEnabledState by rememberDerivedEnabledState(descriptor)
+    val isEnabled = type == QuickActionBarType.EDITOR_TILE || derivedEnabledState
     val elementName = when (type) {
         QuickActionBarType.INTERACTIVE_BUTTON -> FlorisImeUi.SmartbarActionKey
         QuickActionBarType.INTERACTIVE_TILE -> FlorisImeUi.SmartbarActionTile
         QuickActionBarType.EDITOR_TILE -> FlorisImeUi.SmartbarActionsEditorTile
     }.elementName
-    val attributes = mapOf(FlorisImeUi.Attr.Code to action.keyData().code)
+    val attributes: SnyggQueryAttributes = remember(descriptor) {
+        mapOf(
+            FlorisImeUi.Attr.Output to descriptor.toString(),
+        )
+    }
     val selector = when {
         isPressed -> SnyggSelector.PRESSED
         !isEnabled -> SnyggSelector.DISABLED
@@ -78,9 +95,7 @@ fun QuickActionButton(
     // being stuck in the pressed state
     DisposableEffect(action, isEnabled) {
         onDispose {
-            if (action is QuickAction.InsertKey) {
-                action.onPointerCancel(context)
-            }
+            action.onPointerCancel(context)
         }
     }
 
@@ -119,39 +134,20 @@ fun QuickActionButton(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 // Render foreground
                 when (action) {
-                    is QuickAction.InsertKey -> {
-//                        val (imageVector, label) = remember(action, evaluator) {
-//                            evaluator.computeImageVector(action.data) to evaluator.computeLabel(action.data)
-//                        }
-                        // TODO
-                        val imageVector = null
-                        val label = null
-                        if (imageVector != null) {
-                            SnyggBox(
-                                elementName = "$elementName-icon",
-                                attributes = attributes,
-                                selector = selector,
-                            ) {
-                                SnyggIcon(imageVector = imageVector)
-                            }
-                        } else if (label != null) {
-                            SnyggText(
-                                elementName = "$elementName-text",
-                                attributes = attributes,
-                                selector = selector,
-                                text = label,
-                            )
-                        }
-                    }
-
-                    is QuickAction.InsertText -> {
-                        SnyggText(
-                            elementName = "$elementName-text",
+                    is QuickAction.InsertK3Descriptor -> {
+                        SnyggBox(
+                            elementName = "$elementName-icon",
                             attributes = attributes,
                             selector = selector,
-                            text = action.data.firstOrNull().toString().ifBlank { "?" },
-                        )
+                        ) {
+                            val icon = action.computeIcon(imeState)
+                            if (icon != null) {
+                                ImeIcon(icon)
+                            }
+                        }
                     }
+                    is QuickAction.InsertKey -> {}
+                    is QuickAction.InsertText -> {}
                 }
 
                 // Render additional info if this is a tile

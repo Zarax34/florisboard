@@ -194,7 +194,7 @@ fun ClipboardInputLayout(
                 elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
                 onClick = {
                     imeController.updateStateBlocking {
-                        state.copy(
+                        state = state.copy(
                             flags = state.flags
                                 .withImeUiMode(ImeUiMode.TEXT),
                         )

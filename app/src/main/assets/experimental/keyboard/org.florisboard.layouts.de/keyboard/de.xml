@@ -11,10 +11,9 @@
         <display keyId="numeric" display="${numeric_display}" />
         <display keyId="base-numeric" display="${base_display}" />
         <display keyId="symbols-numeric" display="${symbol_1_display}" />
-        <display output="@k3lp:action/backspace" display="@floris:icon/backspace" />
-        <display output="@k3lp:action/enter" display="@floris:icon/enter" />
+        <display output="@k3:action/backspace" display="@fl:icon/backspace" />
+        <display output="@k3:action/enter" display="@fl:icon/enter" />
     </displays>
-
 
     <keys>
         <import base="cldr" path="45/keys-Zyyy-punctuation.xml" />
@@ -26,11 +25,11 @@
         <key id="symbol-2" layerId="symbol-2" width="1.5" />
         <key id="base" layerId="base" width="1.5" />
 
-        <key id="bksp" output="@k3lp:action/backspace" stretch="true" />
+        <key id="bksp" output="@k3:action/backspace" stretch="true" />
         <key id="extra" gap="true" />
-        <key id="enter" output="@k3lp:action/enter" width="1.6" />
+        <key id="enter" output="@k3:action/enter" width="1.6" />
         <key id="space-no-stretch" output="\u{0020}" />
-        <key id="bksp-no-stretch" output="@k3lp:action/backspace" />
+        <key id="bksp-no-stretch" output="@k3:action/backspace" />
 
         <!-- Numbers -->
         <key id="0" output="0" />
@@ -128,7 +127,8 @@
         <!-- Lowercase keys -->
         <key id="a" output="a"
              longPressKeyIds="a-umlaut at a-caret a-grave a-acute a-tilde a-ring a-charon"
-             longPressDefaultKeyId="a-umlaut" />
+             longPressDefaultKeyId="a-umlaut"
+             flickId="a-flicks" />
         <key id="a-umlaut" output="ä" />
         <key id="a-grave" output="à" />
         <key id="a-acute" output="á" />
@@ -236,6 +236,12 @@
         <key id="8-numeric" width="3" output="8" />
         <key id="9-numeric" width="3" output="9" />
     </keys>
+
+    <flicks>
+        <flick id="a-flicks">
+            <flickSegment directions="ne s" keyId="b" />
+        </flick>
+    </flicks>
 
     <layers formId="iso">
         <layer modifiers="none">

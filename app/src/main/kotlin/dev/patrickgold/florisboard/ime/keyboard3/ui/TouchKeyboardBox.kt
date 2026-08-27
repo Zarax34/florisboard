@@ -16,7 +16,6 @@
 
 package dev.patrickgold.florisboard.ime.keyboard3.ui
 
-import androidx.compose.foundation.gestures.awaitDragOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -75,9 +73,8 @@ fun TouchKeyboardBox(
         val peekLineWidthPx = with(density) { 8.dp.toPx() }
         val peekDistanceSqMin = with(density) { 30.dp.toPx().pow(2) }
 
-        val scope = rememberCoroutineScope()
         val pointerTracker = remember(touchKeyboard) {
-            PointerTracker(touchKeyboard, imeController, scope, peekDistanceSqMin)
+            PointerTracker(prefs, touchKeyboard, imeController, peekDistanceSqMin)
         }
 
         Box(

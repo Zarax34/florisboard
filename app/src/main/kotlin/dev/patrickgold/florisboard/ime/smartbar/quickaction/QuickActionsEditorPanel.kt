@@ -35,7 +35,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,11 +52,9 @@ import androidx.compose.ui.unit.toSize
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
-import dev.patrickgold.florisboard.ime.text.key.KeyCode
-import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
+import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.imeController
-import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.toIntOffset
 import org.florisboard.lib.compose.stringRes
 import kotlinx.coroutines.runBlocking
@@ -69,8 +66,8 @@ import org.florisboard.lib.snygg.ui.SnyggRow
 import org.florisboard.lib.snygg.ui.SnyggText
 
 private const val ItemNotFound = -1
-private val NoopAction = QuickAction.InsertKey(TextKeyData(code = KeyCode.NOOP))
-private val DragMarkerAction = QuickAction.InsertKey(TextKeyData(code = KeyCode.DRAG_MARKER))
+private val NoopAction = QuickAction.InsertK3Descriptor(ImeActions.NoopSpacer)
+private val DragMarkerAction = QuickAction.InsertK3Descriptor(ImeActions.NoopDragMarker)
 
 @Composable
 fun QuickActionsEditorPanel() {
@@ -129,10 +126,11 @@ fun QuickActionsEditorPanel() {
     }
 
     fun keyOf(action: QuickAction): Any? {
-        return if (action.keyData().code == KeyCode.NOOP) {
-            null
-        } else {
-            action.hashCode()
+        return when (action) {
+            is QuickAction.InsertK3Descriptor -> {
+                if (action.descriptor == ImeActions.NoopSpacer) null else action.descriptor.hashCode()
+            }
+            else -> null
         }
     }
 
@@ -299,13 +297,11 @@ fun QuickActionsEditorPanel() {
                     )
                 }
                 item(key = keyOf(stickyAction)) {
-                    // TODO
-//                    QuickActionButton(
-//                        modifier = Modifier.animateItem(),
-//                        action = stickyAction,
-//                        evaluator = evaluator,
-//                        type = QuickActionBarType.EDITOR_TILE,
-//                    )
+                    QuickActionButton(
+                        modifier = Modifier.animateItem(),
+                        action = stickyAction,
+                        type = QuickActionBarType.EDITOR_TILE,
+                    )
                 }
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     val n = dynamicActions.count { it != NoopAction }
@@ -314,13 +310,11 @@ fun QuickActionsEditorPanel() {
                     )
                 }
                 itemsIndexed(dynamicActions, key = { i, a -> keyOf(a) ?: i }) { _, action ->
-                    // TODO
-//                    QuickActionButton(
-//                        modifier = Modifier.animateItem(),
-//                        action = action,
-//                        evaluator = evaluator,
-//                        type = QuickActionBarType.EDITOR_TILE,
-//                    )
+                    QuickActionButton(
+                        modifier = Modifier.animateItem(),
+                        action = action,
+                        type = QuickActionBarType.EDITOR_TILE,
+                    )
                 }
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     val n = hiddenActions.count { it != NoopAction }
@@ -329,29 +323,25 @@ fun QuickActionsEditorPanel() {
                     )
                 }
                 itemsIndexed(hiddenActions, key = { i, a -> keyOf(a) ?: i }) { _, action ->
-                    // TODO
-//                    QuickActionButton(
-//                        modifier = Modifier.animateItem(),
-//                        action = action,
-//                        evaluator = evaluator,
-//                        type = QuickActionBarType.EDITOR_TILE,
-//                    )
+                    QuickActionButton(
+                        modifier = Modifier.animateItem(),
+                        action = action,
+                        type = QuickActionBarType.EDITOR_TILE,
+                    )
                 }
             }
             if (activeDragAction != null) {
                 val size = with(LocalDensity.current) {
                     remember(activeDragSize) { activeDragSize.toSize().toDpSize() }
                 }
-                // TODO
-//                QuickActionButton(
-//                    modifier = Modifier
-//                        .size(size)
-//                        .offset { activeDragPosition }
-//                        .offset(-size.width / 2, -size.height / 2),
-//                    action = activeDragAction!!,
-//                    evaluator = evaluator,
-//                    type = QuickActionBarType.EDITOR_TILE,
-//                )
+                QuickActionButton(
+                    modifier = Modifier
+                        .size(size)
+                        .offset { activeDragPosition }
+                        .offset(-size.width / 2, -size.height / 2),
+                    action = activeDragAction!!,
+                    type = QuickActionBarType.EDITOR_TILE,
+                )
             }
         }
     }
