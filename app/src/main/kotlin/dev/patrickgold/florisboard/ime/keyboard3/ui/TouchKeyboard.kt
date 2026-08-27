@@ -40,6 +40,7 @@ class TouchKeyboard(
         if (layer == null || !bounds.contains(position)) {
             return null
         }
+        // TODO improve runtime of this
         for (key in layer.keys) {
             if (key.bounds.contains(position)) {
                 return key

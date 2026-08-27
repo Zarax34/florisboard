@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.keyboard3.ui
 
+import androidx.compose.foundation.gestures.awaitDragOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -39,6 +41,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
@@ -92,6 +95,14 @@ fun TouchKeyboardBox(
                             // TODO this pointer logic is VERY KEEN on sending up, even survives
                             //  mouse leave&re-enter in the emulator => OOB checks
                             val event = awaitPointerEvent()
+                            // TODO evaluate this cancellation logic
+                            pointerTracker.trackedPointers.forEach { (id, _) ->
+                                val change = event.changes.fastFirstOrNull { it.id == id }
+                                if (change == null) {
+                                    // TODO does snapshot map not throw ConcurrentModificationException ??
+                                    pointerTracker.onCancel(id)
+                                }
+                            }
                             event.changes.fastForEach { change ->
                                 if (change.changedToDown()) {
                                     pointerTracker.onDown(change)
@@ -99,9 +110,6 @@ fun TouchKeyboardBox(
                                     pointerTracker.onUp(change)
                                 } else if (!change.isConsumed) {
                                     pointerTracker.onMove(change)
-                                } else {
-                                    // TODO read docs how pointer cancellation works in jetpack compose
-                                    pointerTracker.onCancel(change.id)
                                 }
                             }
                         }
@@ -129,7 +137,9 @@ fun TouchKeyboardBox(
                     if (touchKey.data.gap) {
                         continue
                     }
-                    TouchKeyBox(touchKey)
+                    key(touchKey) {
+                        TouchKeyBox(touchKey)
+                    }
                 }
             } else {
                 Text("activeTouchLayer is null :(")

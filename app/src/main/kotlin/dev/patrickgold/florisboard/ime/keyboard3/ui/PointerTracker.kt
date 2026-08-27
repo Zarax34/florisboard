@@ -34,6 +34,7 @@ internal data class TrackedPointer(
     val peekLayerId: K3LayerId?,
     val peekKey: TouchKey?,
     val peekLine: PeekLine?,
+    val peekMustSwitchBack: Boolean,
     val currKey: TouchKey?,
 )
 
@@ -63,6 +64,7 @@ internal class PointerTracker(
             peekLayerId = downKey.data.layerId.takeIf { trackedPointers.isEmpty() },
             peekKey = null,
             peekLine = null,
+            peekMustSwitchBack = false,
             currKey = downKey,
         )
         require(!trackedPointers.contains(trackedPointer.id))
@@ -94,6 +96,7 @@ internal class PointerTracker(
                 trackedPointers[trackedPointer.id] = trackedPointer.copy(
                     peekKey = newPeekKey,
                     peekLine = PeekLine(trackedPointer.down.position, move.position),
+                    peekMustSwitchBack = true,
                 )
             }
         }
@@ -107,13 +110,21 @@ internal class PointerTracker(
         scope.launch {
             imeController.updateState {
                 if (trackedPointer.peekLayerId != null) {
+                    if (trackedPointer.peekMustSwitchBack) {
+                        switchTouchLayer(trackedPointer.downLayerId)
+                    }
                     if (trackedPointer.peekKey != null) {
                         trackedPointer.peekKey.numPointersFocused.update { it - 1 }
-                        switchTouchLayer(trackedPointer.downLayerId)
                         trackedPointer.peekKey.data.output?.let { emit(it) }
                     }
                 } else {
                     trackedPointer.currKey?.data?.output?.let { emit(it) }
+                    for (otherId in trackedPointers.keys.toList()) {
+                        val otherTp = trackedPointers[otherId]!!
+                        if (otherTp.peekLayerId != null) {
+                            trackedPointers[otherId] = otherTp.copy(peekMustSwitchBack = true)
+                        }
+                    }
                 }
             }
         }
@@ -123,6 +134,8 @@ internal class PointerTracker(
     fun onCancel(id: PointerId) {
         val trackedPointer = trackedPointers[id]
         requireNotNull(trackedPointer)
+        trackedPointer.currKey?.numPointersFocused?.update { it - 1 }
+        trackedPointer.peekKey?.numPointersFocused?.update { it - 1 }
         if (trackedPointer.peekLayerId != null) {
             scope.launch {
                 imeController.updateState {
@@ -130,5 +143,6 @@ internal class PointerTracker(
                 }
             }
         }
+        trackedPointers.remove(id)
     }
 }
