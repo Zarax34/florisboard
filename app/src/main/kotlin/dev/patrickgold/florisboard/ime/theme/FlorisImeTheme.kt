@@ -27,8 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.window.LocalWindowController
-import dev.patrickgold.florisboard.imeController
 import dev.patrickgold.florisboard.themeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import org.florisboard.lib.snygg.ui.ProvideSnyggTheme
@@ -37,9 +37,9 @@ import org.florisboard.lib.snygg.ui.rememberSnyggTheme
 @Composable
 fun FlorisImeTheme(content: @Composable () -> Unit) {
     val context = LocalContext.current
+    val imeController = LocalImeController.current
     val windowController = LocalWindowController.current
 
-    val imeController by context.imeController()
     val themeManager by context.themeManager()
 
     val prefs by FlorisPreferenceStore

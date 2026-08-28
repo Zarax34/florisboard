@@ -96,13 +96,13 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.media.KeyboardLikeButton
 import dev.patrickgold.florisboard.ime.smartbar.AnimationDuration
 import dev.patrickgold.florisboard.ime.smartbar.VerticalEnterTransition
 import dev.patrickgold.florisboard.ime.smartbar.VerticalExitTransition
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
-import dev.patrickgold.florisboard.imeController
 import dev.patrickgold.florisboard.lib.observeAsTransformingState
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -142,7 +142,7 @@ fun ClipboardInputLayout(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val clipboardManager by context.clipboardManager()
-    val imeController by context.imeController()
+    val imeController = LocalImeController.current
     val androidKeyguardManager = remember { context.systemService(AndroidKeyguardManager::class) }
 
     val deviceLocked = androidKeyguardManager.let { it.isDeviceLocked || it.isKeyguardLocked }

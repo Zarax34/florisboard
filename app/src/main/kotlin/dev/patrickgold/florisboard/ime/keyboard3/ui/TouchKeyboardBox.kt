@@ -25,7 +25,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
@@ -43,25 +42,27 @@ import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
-import dev.patrickgold.florisboard.ime.keyboard3.ImeController
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import org.k3lp.model.layer.K3LayerId
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
 @Composable
 fun TouchKeyboardBox(
-    imeController: ImeController,
     modifier: Modifier = Modifier,
 ) {
-    BoxWithConstraints(modifier.fillMaxWidth()) {
-        val prefs by FlorisPreferenceStore
-        val density = LocalDensity.current
+    val prefs by FlorisPreferenceStore
+    val density = LocalDensity.current
+    val imeController = LocalImeController.current
 
+    BoxWithConstraints(modifier.fillMaxWidth()) {
         val keyboardWidthDp = with(density) { constraints.maxWidth.toDp() }
         val keyboardRowHeightDp = FlorisImeSizing.keyboardRowBaseHeight
 
         val imeState by imeController.activeState.collectAsState()
-        val model by remember { derivedStateOf(referentialEqualityPolicy()) { imeState.model } }
+        val model by remember { derivedStateOf { imeState.model } }
         val touchKeyboard = remember(model, density, keyboardWidthDp, keyboardRowHeightDp) {
             doComputeTouchKeyboard(model, density, keyboardWidthDp, keyboardRowHeightDp)
         }
@@ -87,8 +88,9 @@ fun TouchKeyboardBox(
                     layout(placeable.width, placeable.height) { placeable.place(0, 0) }
                 }
                 .pointerInput(Unit) {
+                    val currentContext = currentCoroutineContext()
                     awaitPointerEventScope {
-                        while (true) {
+                        while (currentContext.isActive) {
                             // TODO this pointer logic is VERY KEEN on sending up, even survives
                             //  mouse leave&re-enter in the emulator => OOB checks
                             val event = awaitPointerEvent()

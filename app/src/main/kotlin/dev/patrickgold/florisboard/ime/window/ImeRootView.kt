@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.theme.FlorisImeTheme
 import org.florisboard.lib.compose.ProvideLocalizedResources
 
@@ -59,6 +60,7 @@ class ImeRootView(val ims: FlorisImeService) : AbstractComposeView(ims) {
     override fun Content() {
         CompositionLocalProvider(
             LocalInputFeedbackController provides ims.inputFeedbackController,
+            LocalImeController provides ims.imeController,
             LocalWindowController provides ims.windowController,
         ) {
             ProvideLocalizedResources(

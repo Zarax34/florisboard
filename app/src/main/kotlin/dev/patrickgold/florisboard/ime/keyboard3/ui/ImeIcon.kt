@@ -52,9 +52,9 @@ import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.editor.ImeOptions
 import dev.patrickgold.florisboard.ime.keyboard3.ImeIcons
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.window.ImeWindowMode
 import dev.patrickgold.florisboard.ime.window.LocalWindowController
-import dev.patrickgold.florisboard.imeController
 import dev.patrickgold.florisboard.lib.compose.vectorResource
 import org.florisboard.lib.compose.icons.ForwardDelete
 import org.florisboard.lib.snygg.ui.SnyggIcon
@@ -66,8 +66,7 @@ fun ImeIcon(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val imeController by context.imeController()
-    // TODO this could break if ever used outside IME window
+    val imeController = LocalImeController.current
     val windowController = LocalWindowController.current
 
     val imeState by imeController.activeState.collectAsState()

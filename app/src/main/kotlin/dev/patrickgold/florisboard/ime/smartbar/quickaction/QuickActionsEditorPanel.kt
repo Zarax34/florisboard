@@ -43,7 +43,6 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -53,11 +52,11 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
-import dev.patrickgold.florisboard.imeController
 import dev.patrickgold.florisboard.lib.toIntOffset
-import org.florisboard.lib.compose.stringRes
 import kotlinx.coroutines.runBlocking
+import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggColumn
 import org.florisboard.lib.snygg.ui.SnyggIcon
@@ -72,8 +71,7 @@ private val DragMarkerAction = QuickAction.InsertK3Descriptor(ImeActions.NoopDra
 @Composable
 fun QuickActionsEditorPanel() {
     val prefs by FlorisPreferenceStore
-    val context = LocalContext.current
-    val imeController by context.imeController()
+    val imeController = LocalImeController.current
 
     // We get the current arrangement once and do not observe on purpose
     val actionArrangement = remember { prefs.smartbar.actionArrangement.get() }

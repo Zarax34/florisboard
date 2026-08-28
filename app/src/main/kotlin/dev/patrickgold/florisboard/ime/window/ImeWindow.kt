@@ -62,11 +62,11 @@ import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardInputLayout
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.ProvideKeyboardRowBaseHeight
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.media.MediaInputLayout
 import dev.patrickgold.florisboard.ime.sheet.BottomSheetWindow
 import dev.patrickgold.florisboard.ime.text.TextInputLayout
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
-import dev.patrickgold.florisboard.imeController
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import kotlinx.coroutines.delay
 import org.florisboard.lib.android.readText
@@ -194,9 +194,9 @@ fun BoxScope.ImeWindow() {
 @Composable
 private fun ImeInnerWindow() {
     val context = LocalContext.current
+    val imeController = LocalImeController.current
     val windowController = LocalWindowController.current
 
-    val imeController by context.imeController()
     val imeState by imeController.activeState.collectAsState()
     val windowSpec by windowController.activeWindowSpec.collectAsState()
 

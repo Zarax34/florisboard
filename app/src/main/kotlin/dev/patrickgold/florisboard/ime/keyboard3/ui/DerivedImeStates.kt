@@ -26,7 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
-import dev.patrickgold.florisboard.imeController
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.subtypeManager
 import org.florisboard.lib.android.AndroidKeyguardManager
 import org.florisboard.lib.android.systemService
@@ -43,7 +43,7 @@ fun rememberDerivedEnabledState(
     val clipboardManager by context.clipboardManager()
     val primaryClip by clipboardManager.primaryClipFlow.collectAsState()
 
-    val imeController by context.imeController()
+    val imeController = LocalImeController.current
     val imeState by imeController.activeState.collectAsState()
 
     val subtypeManager by context.subtypeManager()

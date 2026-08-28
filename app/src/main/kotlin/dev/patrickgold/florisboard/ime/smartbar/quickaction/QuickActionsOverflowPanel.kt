@@ -33,8 +33,8 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
-import dev.patrickgold.florisboard.imeController
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import org.florisboard.lib.compose.stringRes
@@ -46,7 +46,7 @@ import org.florisboard.lib.snygg.ui.SnyggText
 fun QuickActionsOverflowPanel() {
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
-    val imeController by context.imeController()
+    val imeController = LocalImeController.current
     val keyboardManager by context.keyboardManager()
 
     val actionArrangement by prefs.smartbar.actionArrangement.collectAsState()

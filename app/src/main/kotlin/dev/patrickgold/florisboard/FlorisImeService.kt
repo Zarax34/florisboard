@@ -260,7 +260,7 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     private val prefs by FlorisPreferenceStore
     val editorInstance by editorInstance()
-    private val imeController by imeController()
+    val imeController by imeController()
     private val nlpManager by nlpManager()
     private val subtypeManager by subtypeManager()
     private val themeManager by themeManager()

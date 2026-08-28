@@ -85,8 +85,7 @@ internal class PointerTracker(
     }
 
     fun onMove(move: PointerInputChange) {
-        val trackedPointer = trackedPointers[move.id]
-        requireNotNull(trackedPointer)
+        val trackedPointer = trackedPointers[move.id] ?: return
         move.consume()
         if (trackedPointer.peekLayerId != null) {
             val distanceSq = (move.position - trackedPointer.down.position).getDistanceSquared()
@@ -107,8 +106,7 @@ internal class PointerTracker(
     }
 
     fun onUp(up: PointerInputChange) {
-        val trackedPointer = trackedPointers[up.id]
-        requireNotNull(trackedPointer)
+        val trackedPointer = trackedPointers[up.id] ?: return
         trackedPointer.downKey.numPointersFocused.update { it - 1 }
         up.consume()
         scope.launch {

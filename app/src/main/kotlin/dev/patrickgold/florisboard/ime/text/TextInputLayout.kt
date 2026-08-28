@@ -25,17 +25,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.keyboard3.ui.TouchKeyboardBox
 import dev.patrickgold.florisboard.ime.smartbar.IncognitoDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.InlineSuggestionsStyleCache
 import dev.patrickgold.florisboard.ime.smartbar.Smartbar
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionsOverflowPanel
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
-import dev.patrickgold.florisboard.imeController
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import org.florisboard.lib.snygg.ui.SnyggIcon
 
@@ -43,10 +42,8 @@ import org.florisboard.lib.snygg.ui.SnyggIcon
 fun TextInputLayout(
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-
     val prefs by FlorisPreferenceStore
-    val imeController by context.imeController()
+    val imeController = LocalImeController.current
     val imeState by imeController.activeState.collectAsState()
 
     InlineSuggestionsStyleCache()
@@ -73,7 +70,7 @@ fun TextInputLayout(
                         painter = painterResource(R.drawable.ic_incognito),
                     )
                 }
-                TouchKeyboardBox(imeController)
+                TouchKeyboardBox()
             }
         }
     }

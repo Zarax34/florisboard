@@ -20,6 +20,7 @@ package dev.patrickgold.florisboard.ime.keyboard3
 import android.icu.text.BreakIterator
 import android.view.KeyEvent
 import android.view.inputmethod.InputConnection
+import androidx.compose.runtime.staticCompositionLocalOf
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.ImeUiMode
@@ -52,25 +53,11 @@ import org.k3lp.runtime.K3SurroundingText
 import org.k3lp.runtime.K3TextRange
 import java.lang.ref.WeakReference
 
-private class ExpectedContentQueue {
-    private val list = mutableListOf<K3Content>()
-
-    fun popUntilOrNull(predicate: (K3Content) -> Boolean): K3Content? {
-        while (list.isNotEmpty()) {
-            val item = list[0]
-            if (predicate(item)) return item
-            list.removeAt(0)
-        }
-        return null
-    }
-
-    fun push(item: K3Content) {
-        list.add(item)
-    }
-
-    fun clear() {
-        list.clear()
-    }
+/**
+ * Provides the [ImeController] instance this composition tree is associated with.
+ */
+val LocalImeController = staticCompositionLocalOf<ImeController> {
+    error("No IME controller is associated with this composition tree.")
 }
 
 class ImeController : K3InputMethod<ImeState, ImeEditor, ImeController.UpdateImeStateScope>(
@@ -432,5 +419,26 @@ class ImeController : K3InputMethod<ImeState, ImeEditor, ImeController.UpdateIme
         private val LAYER_CAPS = K3LayerId("caps")
 
         private val NEWLINE_SEQ = "\n".asK3String()
+    }
+}
+
+private class ExpectedContentQueue {
+    private val list = mutableListOf<K3Content>()
+
+    fun popUntilOrNull(predicate: (K3Content) -> Boolean): K3Content? {
+        while (list.isNotEmpty()) {
+            val item = list[0]
+            if (predicate(item)) return item
+            list.removeAt(0)
+        }
+        return null
+    }
+
+    fun push(item: K3Content) {
+        list.add(item)
+    }
+
+    fun clear() {
+        list.clear()
     }
 }

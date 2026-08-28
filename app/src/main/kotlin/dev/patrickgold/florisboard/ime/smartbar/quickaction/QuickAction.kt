@@ -16,16 +16,13 @@
 
 package dev.patrickgold.florisboard.ime.smartbar.quickaction
 
-import android.content.Context
 import androidx.compose.runtime.Composable
 import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
 import dev.patrickgold.florisboard.ime.keyboard3.ImeIcons
 import dev.patrickgold.florisboard.ime.keyboard3.ImeState
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
-import dev.patrickgold.florisboard.imeController
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.florisboard.lib.compose.stringRes
@@ -33,24 +30,11 @@ import org.k3lp.lib.text.K3Descriptor
 
 @Serializable
 sealed class QuickAction {
-    open fun onPointerDown(context: Context) = Unit
-
-    open fun onPointerUp(context: Context) = Unit
-
-    open fun onPointerCancel(context: Context) = Unit
-
     abstract fun migrateToK3DescriptorOrNull(): InsertK3Descriptor?
 
     @Serializable
     @SerialName("insert_k3descriptor")
     data class InsertK3Descriptor(val descriptor: K3Descriptor) : QuickAction() {
-        override fun onPointerUp(context: Context) {
-            val imeController by context.imeController()
-            imeController.updateStateBlocking {
-                emitDescriptor(descriptor)
-            }
-        }
-
         override fun migrateToK3DescriptorOrNull(): InsertK3Descriptor {
             return this
         }
@@ -60,25 +44,6 @@ sealed class QuickAction {
     @Serializable
     @SerialName("insert_key")
     data class InsertKey(val data: KeyData) : QuickAction() {
-        override fun onPointerDown(context: Context) {
-//            val keyboardManager by context.keyboardManager()
-//            keyboardManager.inputEventDispatcher.sendDown(data)
-        }
-
-        override fun onPointerUp(context: Context) {
-//            val keyboardManager by context.keyboardManager()
-//            keyboardManager.inputEventDispatcher.sendUp(data)
-//            if (!keyboardManager.inputEventDispatcher.isRepeatable(data) &&
-//                data.code != KeyCode.TOGGLE_ACTIONS_OVERFLOW && data.code != KeyCode.CLIPBOARD_SELECT_ALL) {
-//                keyboardManager.activeState.isActionsOverflowVisible = false
-//            }
-        }
-
-        override fun onPointerCancel(context: Context) {
-//            val keyboardManager by context.keyboardManager()
-//            keyboardManager.inputEventDispatcher.sendCancel(data)
-        }
-
         override fun migrateToK3DescriptorOrNull(): InsertK3Descriptor? {
             return when (data.code) {
                 KeyCode.UNDO -> InsertK3Descriptor(ImeActions.Undo)
@@ -112,11 +77,6 @@ sealed class QuickAction {
     @Serializable
     @SerialName("insert_text")
     data class InsertText(val data: String) : QuickAction() {
-        override fun onPointerUp(context: Context) {
-            val editorInstance by context.editorInstance()
-            editorInstance.commitText(data)
-        }
-
         override fun migrateToK3DescriptorOrNull(): InsertK3Descriptor? {
             return null
         }

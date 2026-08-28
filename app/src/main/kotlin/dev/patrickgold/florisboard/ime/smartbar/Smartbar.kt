@@ -58,12 +58,12 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionButton
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionsRow
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.ToggleOverflowPanelAction
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
-import dev.patrickgold.florisboard.imeController
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.launch
@@ -144,7 +144,7 @@ fun Smartbar() {
 private fun SmartbarMainRow(modifier: Modifier = Modifier) {
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
-    val imeController by context.imeController()
+    val imeController = LocalImeController.current
     val nlpManager by context.nlpManager()
     val scope = rememberCoroutineScope()
 

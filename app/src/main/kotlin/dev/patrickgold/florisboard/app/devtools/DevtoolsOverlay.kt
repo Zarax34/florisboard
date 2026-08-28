@@ -41,17 +41,15 @@ import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.clipboardManager
-import dev.patrickgold.florisboard.editorInstance
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
 import dev.patrickgold.florisboard.ime.theme.ThemeManager
-import dev.patrickgold.florisboard.imeController
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.themeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.snygg.SnyggMissingSchemaException
-import org.k3lp.runtime.K3Content
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -115,8 +113,7 @@ private fun DevtoolsClipboardOverlay() {
 
 @Composable
 private fun DevtoolsInputStateOverlay() {
-    val context = LocalContext.current
-    val imeController by context.imeController()
+    val imeController = LocalImeController.current
     val imeState by imeController.activeState.collectAsState()
 
     val info = imeState.editor.info

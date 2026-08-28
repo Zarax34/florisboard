@@ -27,22 +27,20 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.compose.tooltip.PlainTooltip
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.keyboard3.ui.ImeIcon
 import dev.patrickgold.florisboard.ime.keyboard3.ui.rememberDerivedEnabledState
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
-import dev.patrickgold.florisboard.imeController
 import org.florisboard.lib.snygg.SnyggQueryAttributes
 import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.ui.SnyggBox
@@ -60,8 +58,7 @@ fun QuickActionButton(
     modifier: Modifier = Modifier,
     type: QuickActionBarType = QuickActionBarType.INTERACTIVE_BUTTON,
 ) {
-    val context = LocalContext.current
-    val imeController by context.imeController()
+    val imeController = LocalImeController.current
     val imeState by imeController.activeState.collectAsState()
     val inputFeedbackController = LocalInputFeedbackController.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -91,14 +88,6 @@ fun QuickActionButton(
         else -> null
     }
 
-    // Need to manually cancel an action if this composable suddenly leaves the composition to prevent the key from
-    // being stuck in the pressed state
-    DisposableEffect(action, isEnabled) {
-        onDispose {
-            action.onPointerCancel(context)
-        }
-    }
-
     PlainTooltip(action.computeTooltip(imeState), enabled = type == QuickActionBarType.INTERACTIVE_BUTTON) {
         SnyggBox(
             elementName = elementName,
@@ -116,15 +105,18 @@ fun QuickActionButton(
                             val press = PressInteraction.Press(down.position)
                             inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
                             interactionSource.tryEmit(press)
-                            action.onPointerDown(context)
+                            // action.onPointerDown(context)
                             val up = waitForUpOrCancellation()
                             if (up != null) {
                                 up.consume()
                                 interactionSource.tryEmit(PressInteraction.Release(press))
-                                action.onPointerUp(context)
+                                // action.onPointerUp(context)
+                                imeController.updateStateBlocking {
+                                    emitDescriptor(descriptor)
+                                }
                             } else {
                                 interactionSource.tryEmit(PressInteraction.Cancel(press))
-                                action.onPointerCancel(context)
+                                // action.onPointerCancel(context)
                             }
                         }
                     }

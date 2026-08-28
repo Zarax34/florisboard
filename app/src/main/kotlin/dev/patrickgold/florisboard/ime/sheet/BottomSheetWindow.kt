@@ -19,17 +19,14 @@ package dev.patrickgold.florisboard.ime.sheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.ime.core.SelectSubtypePanel
 import dev.patrickgold.florisboard.ime.keyboard3.ImeState
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionsEditorPanel
-import dev.patrickgold.florisboard.imeController
-import kotlin.getValue
 
 @Composable
 fun BottomSheetWindow() {
-    val context = LocalContext.current
-    val imeController by context.imeController()
+    val imeController = LocalImeController.current
     val imeState by imeController.activeState.collectAsState()
 
     BottomSheetHostUi(
