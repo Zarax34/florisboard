@@ -20,13 +20,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -53,7 +48,7 @@ import dev.patrickgold.florisboard.ime.keyboard3.ImeController
 import dev.patrickgold.florisboard.ime.keyboard3.ImeEditor
 import dev.patrickgold.florisboard.ime.keyboard3.ImeState
 import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
-import dev.patrickgold.florisboard.ime.keyboard3.ui.TouchKeyboardBox
+import dev.patrickgold.florisboard.ime.keyboard3.ui.ImeKeyboardLayout
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import kotlinx.coroutines.launch
@@ -180,7 +175,7 @@ fun EmojiSearchLayout(
                     )
                 }
             }
-            TouchKeyboardBox()
+            ImeKeyboardLayout()
         }
     }
 }

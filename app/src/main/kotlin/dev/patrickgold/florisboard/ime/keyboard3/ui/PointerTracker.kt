@@ -16,19 +16,25 @@
 
 package dev.patrickgold.florisboard.ime.keyboard3.ui
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
-import dev.patrickgold.florisboard.app.FlorisPreferenceModel
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard3.ImeController
+import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.k3lp.model.layer.K3LayerId
+import kotlin.math.pow
 
-internal data class TrackedPointer(
+data class TrackedPointer(
     val id: PointerId,
     val down: PointerInputChange,
     val downLayerId: K3LayerId,
@@ -40,20 +46,35 @@ internal data class TrackedPointer(
     val currKey: TouchKey?,
 )
 
-internal data class PeekLine(
+data class PeekLine(
     val start: Offset,
     val end: Offset,
 )
 
-internal class PointerTracker(
-    val prefs: FlorisPreferenceModel,
+@Composable
+fun rememberPointerTracker(
+    touchKeyboard: TouchKeyboard,
+): PointerTracker {
+    val prefs by FlorisPreferenceStore
+    val density = LocalDensity.current
+    val imeController = LocalImeController.current
+    val scope = rememberCoroutineScope()
+
+    // TODO make configurable
+    val peekDistanceSqMin = with(density) { 30.dp.toPx().pow(2) }
+
+    return remember(touchKeyboard) {
+        PointerTracker(touchKeyboard, imeController, scope, peekDistanceSqMin)
+    }
+}
+
+class PointerTracker(
     val touchKeyboard: TouchKeyboard,
     val imeController: ImeController,
+    val scope: CoroutineScope,
     val peekDistanceSqMin: Float,
 ) {
     val trackedPointers = mutableStateMapOf<PointerId, TrackedPointer>()
-
-    val scope = CoroutineScope(Dispatchers.Main)
 
     fun onDown(down: PointerInputChange) {
         val downLayerId = imeController.snapshotState().touchLayerId
@@ -73,13 +94,13 @@ internal class PointerTracker(
         )
         require(!trackedPointers.contains(trackedPointer.id))
         trackedPointers[trackedPointer.id] = trackedPointer
-        downKey.numPointersFocused.update { it + 1 }
+        if (downKey.data.layerId == null) {
+            downKey.numPointersFocused.update { it + 1 }
+        }
 
         if (trackedPointer.peekLayerId != null) {
-            scope.launch {
-                imeController.updateState {
-                    switchTouchLayer(trackedPointer.peekLayerId)
-                }
+            imeController.updateStateBlocking {
+                switchTouchLayer(trackedPointer.peekLayerId)
             }
         }
     }
@@ -107,7 +128,9 @@ internal class PointerTracker(
 
     fun onUp(up: PointerInputChange) {
         val trackedPointer = trackedPointers[up.id] ?: return
-        trackedPointer.downKey.numPointersFocused.update { it - 1 }
+        if (trackedPointer.downKey.data.layerId == null) {
+            trackedPointer.downKey.numPointersFocused.update { it - 1 }
+        }
         up.consume()
         scope.launch {
             imeController.updateState {

@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -61,8 +62,8 @@ import org.florisboard.lib.snygg.ui.SnyggIcon
 import org.k3lp.lib.text.K3Descriptor
 
 @Composable
-fun ImeIcon(
-    descriptor: K3Descriptor,
+fun Icon3(
+    value: K3Descriptor,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -70,12 +71,17 @@ fun ImeIcon(
     val windowController = LocalWindowController.current
 
     val imeState by imeController.activeState.collectAsState()
-    val windowConfig by windowController.activeWindowConfig.collectAsState()
+    val imeOptions by remember { derivedStateOf { imeState.editor.info.imeOptions } }
+    val inputAttributes by remember { derivedStateOf { imeState.editor.info.inputAttributes } }
+    val debugShowDragAndDropHelpers by remember {
+        derivedStateOf { imeState.flags.debugShowDragAndDropHelpers }
+    }
 
-    val imageVector = remember(descriptor, imeState, windowConfig) {
-        val imeOptions = imeState.editor.info.imeOptions
-        val inputAttributes = imeState.editor.info.inputAttributes
-        when (descriptor) {
+    val windowConfig by windowController.activeWindowConfig.collectAsState()
+    val windowMode by remember { derivedStateOf { windowConfig.mode } }
+
+    val imageVector = remember(value, imeOptions, inputAttributes, windowMode) {
+        when (value) {
             ImeIcons.ArrowDown -> Icons.Default.KeyboardArrowDown
             ImeIcons.ArrowLeft -> Icons.AutoMirrored.Filled.KeyboardArrowLeft
             ImeIcons.ArrowRight -> Icons.AutoMirrored.Filled.KeyboardArrowRight
@@ -88,13 +94,13 @@ fun ImeIcon(
             ImeIcons.Close -> Icons.Default.Close
             ImeIcons.Delete -> Icons.AutoMirrored.Default.ForwardDelete
             ImeIcons.DragMarker -> {
-                if (imeState.flags.debugShowDragAndDropHelpers) Icons.Default.Close else null
+                if (debugShowDragAndDropHelpers) Icons.Default.Close else null
             }
             ImeIcons.Enter -> {
                 if (imeOptions.flagNoEnterAction || inputAttributes.flagTextMultiLine) {
                     Icons.AutoMirrored.Filled.KeyboardReturn
                 } else {
-                    when (imeState.editor.info.imeOptions.action) {
+                    when (imeOptions.action) {
                         ImeOptions.Action.DONE -> Icons.Default.Done
                         ImeOptions.Action.GO -> Icons.AutoMirrored.Filled.ArrowRightAlt
                         ImeOptions.Action.NEXT -> Icons.AutoMirrored.Filled.ArrowRightAlt
@@ -108,8 +114,9 @@ fun ImeIcon(
             }
             ImeIcons.HideKeyboard -> Icons.Default.KeyboardHide
             ImeIcons.LanguageSwitch -> Icons.Default.Language
-            ImeIcons.ModeClipboard -> Icons.AutoMirrored.Outlined.Assignment
-            ImeIcons.ModeMedia -> Icons.Default.SentimentSatisfiedAlt
+            ImeIcons.ClipboardPanel -> Icons.AutoMirrored.Outlined.Assignment
+            ImeIcons.MediaPanel -> Icons.Default.SentimentSatisfiedAlt
+            ImeIcons.TextPanel -> context.vectorResource(R.drawable.ic_abc)
             ImeIcons.Noop -> Icons.Default.Close
             ImeIcons.Redo -> Icons.AutoMirrored.Filled.Redo
             ImeIcons.SelectAll -> Icons.Default.SelectAll
@@ -117,7 +124,7 @@ fun ImeIcon(
             ImeIcons.ToggleActionsOverflow -> Icons.Default.MoreHoriz
             ImeIcons.ToggleAutocorrect -> Icons.Default.FontDownload
             ImeIcons.ToggleCompactLayout -> context.vectorResource(R.drawable.ic_accessibility_one_handed)
-            ImeIcons.ToggleFloatingWindow -> when (windowConfig.mode) {
+            ImeIcons.ToggleFloatingWindow -> when (windowMode) {
                 ImeWindowMode.FIXED -> context.vectorResource(R.drawable.ic_floating_keyboard)
                 ImeWindowMode.FLOATING -> context.vectorResource(R.drawable.ic_floating_keyboard_disable)
             }

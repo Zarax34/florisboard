@@ -48,6 +48,17 @@ class TouchKeyboard(
         }
         return null
     }
+
+    companion object {
+        fun empty(bounds: Rect): TouchKeyboard {
+            return TouchKeyboard(
+                bounds = bounds,
+                layers = mapOf(
+                    K3LayerId.BASE to TouchLayer.Empty,
+                ),
+            )
+        }
+    }
 }
 
 class TouchLayer(
@@ -83,12 +94,7 @@ fun doComputeTouchKeyboard(
         )
     )
     if (layers == null) {
-        return TouchKeyboard(
-            bounds = touchKeyboardBounds,
-            layers = mapOf(
-                K3LayerId.BASE to TouchLayer.Empty,
-            ),
-        )
+        return TouchKeyboard.empty(touchKeyboardBounds)
     }
 
     val touchLayers = layers.mapValues { (_, layer) ->

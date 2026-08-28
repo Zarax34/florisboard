@@ -54,11 +54,11 @@ fun FlorisImeTheme(content: @Composable () -> Unit) {
     val windowSpec by windowController.activeWindowSpec.collectAsState()
     val fontScale by remember { derivedStateOf { windowSpec.fontScale } }
 
-    val imeState by imeController.activeState.collectAsState()
-    val attributes = mapOf(
-        FlorisImeUi.Attr.Mode to imeState.flags.keyboardMode.toString(),
-        FlorisImeUi.Attr.ShiftState to imeState.flags.inputShiftState.toString(),
-    )
+//    val imeState by imeController.activeState.collectAsState()
+//    val attributes = mapOf(
+//        FlorisImeUi.Attr.Mode to imeState.flags.keyboardMode.toString(),
+//        FlorisImeUi.Attr.ShiftState to imeState.flags.inputShiftState.toString(),
+//    )
 
     MaterialTheme {
         CompositionLocalProvider(
@@ -69,7 +69,7 @@ fun FlorisImeTheme(content: @Composable () -> Unit) {
                 dynamicAccentColor = accentColor,
                 fontSizeMultiplier = fontScale,
                 assetResolver = assetResolver,
-                rootAttributes = attributes,
+                rootAttributes = emptyMap(),
                 content = content,
                 materialYouFlags = activeThemeInfo.config.materialYouFlags
             )

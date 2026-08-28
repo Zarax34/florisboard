@@ -22,14 +22,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
-import dev.patrickgold.florisboard.ime.keyboard3.ui.TouchKeyboardBox
+import dev.patrickgold.florisboard.ime.keyboard3.ui.ImeKeyboardLayout
 import dev.patrickgold.florisboard.ime.smartbar.IncognitoDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.InlineSuggestionsStyleCache
 import dev.patrickgold.florisboard.ime.smartbar.Smartbar
@@ -44,7 +46,14 @@ fun TextInputLayout(
 ) {
     val prefs by FlorisPreferenceStore
     val imeController = LocalImeController.current
+
     val imeState by imeController.activeState.collectAsState()
+    val isActionsOverflowVisible by remember {
+        derivedStateOf { imeState.flags.isActionsOverflowVisible }
+    }
+    val isIncognitoMode by remember {
+        derivedStateOf { imeState.flags.isIncognitoMode }
+    }
 
     InlineSuggestionsStyleCache()
 
@@ -54,12 +63,12 @@ fun TextInputLayout(
             .wrapContentHeight(),
     ) {
         Smartbar()
-        if (imeState.flags.isActionsOverflowVisible) {
+        if (isActionsOverflowVisible) {
             QuickActionsOverflowPanel()
         } else {
             Box {
                 val incognitoDisplayMode by prefs.keyboard.incognitoDisplayMode.collectAsState()
-                val showIncognitoIcon = imeState.flags.isIncognitoMode &&
+                val showIncognitoIcon = isIncognitoMode &&
                     incognitoDisplayMode == IncognitoDisplayMode.DISPLAY_BEHIND_KEYBOARD
                 if (showIncognitoIcon) {
                     SnyggIcon(
@@ -70,7 +79,7 @@ fun TextInputLayout(
                         painter = painterResource(R.drawable.ic_incognito),
                     )
                 }
-                TouchKeyboardBox()
+                ImeKeyboardLayout()
             }
         }
     }

@@ -54,9 +54,8 @@ object FlorisImeSizing {
 
     @Composable
     fun keyboardUiHeight(): Dp {
-        val imeController = LocalImeController.current
-        val imeState by imeController.activeState.collectAsState()
-        return (keyboardRowBaseHeight * imeState.effRowCount)
+        val rowCount by rowCountAsState()
+        return keyboardRowBaseHeight * rowCount
     }
 
     @Composable

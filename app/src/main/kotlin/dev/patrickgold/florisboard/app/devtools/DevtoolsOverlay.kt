@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -114,10 +115,10 @@ private fun DevtoolsClipboardOverlay() {
 @Composable
 private fun DevtoolsInputStateOverlay() {
     val imeController = LocalImeController.current
-    val imeState by imeController.activeState.collectAsState()
 
-    val info = imeState.editor.info
-    val content = imeState.content
+    val imeState by imeController.activeState.collectAsState()
+    val info by remember { derivedStateOf { imeState.editor.info } }
+    val content by remember { derivedStateOf { imeState.content } }
 
     DevtoolsOverlayBox(title = "Input state overlay") {
         DevtoolsSubGroup(title = "EditorInfo") {

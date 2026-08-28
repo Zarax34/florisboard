@@ -178,8 +178,8 @@ fun QuickAction.computeIcon(imeState: ImeState): K3Descriptor? {
             ImeActions.ClipboardPaste -> ImeIcons.ClipboardPaste
             ImeActions.SelectAll -> ImeIcons.SelectAll
             ImeActions.Settings -> ImeIcons.Settings
-            ImeActions.ShowMediaPanel -> ImeIcons.ModeMedia
-            ImeActions.ShowClipboardPanel -> ImeIcons.ModeClipboard
+            ImeActions.ShowMediaPanel -> ImeIcons.MediaPanel
+            ImeActions.ShowClipboardPanel -> ImeIcons.ClipboardPanel
             ImeActions.HideImeWindow -> ImeIcons.HideKeyboard
             ImeActions.LanguageSwitch -> ImeIcons.LanguageSwitch
             ImeActions.ToggleActionsOverflow -> ImeIcons.ToggleActionsOverflow

@@ -11,8 +11,13 @@
         <display keyId="numeric" display="${numeric_display}" />
         <display keyId="base-numeric" display="${base_display}" />
         <display keyId="symbols-numeric" display="${symbol_1_display}" />
+
+        <!-- TODO these must be provided by an implicit floris import -->
         <display output="@k3:action/backspace" display="@fl:icon/backspace" />
         <display output="@k3:action/enter" display="@fl:icon/enter" />
+        <display output="@fl:action/show_text_panel" display="@fl:icon/text_panel" />
+        <display output="@fl:action/show_media_panel" display="@fl:icon/media_panel" />
+        <display output="@fl:action/show_clipboard_panel" display="@fl:icon/clipboard_panel" />
     </displays>
 
     <keys>

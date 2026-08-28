@@ -37,7 +37,7 @@ import dev.patrickgold.compose.tooltip.PlainTooltip
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
 import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
-import dev.patrickgold.florisboard.ime.keyboard3.ui.ImeIcon
+import dev.patrickgold.florisboard.ime.keyboard3.ui.Icon3
 import dev.patrickgold.florisboard.ime.keyboard3.ui.rememberDerivedEnabledState
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
@@ -134,7 +134,7 @@ fun QuickActionButton(
                         ) {
                             val icon = action.computeIcon(imeState)
                             if (icon != null) {
-                                ImeIcon(icon)
+                                Icon3(icon)
                             }
                         }
                     }

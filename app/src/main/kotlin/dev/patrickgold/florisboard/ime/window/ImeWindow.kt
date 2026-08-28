@@ -199,6 +199,7 @@ private fun ImeInnerWindow() {
 
     val imeState by imeController.activeState.collectAsState()
     val windowSpec by windowController.activeWindowSpec.collectAsState()
+    val activeImeUiMode by remember { derivedStateOf { imeState.flags.imeUiMode } }
 
     ProvideActualLayoutDirection {
         val layoutDirection = LocalLayoutDirection.current
@@ -248,7 +249,7 @@ private fun ImeInnerWindow() {
             }
         }
         Column {
-            when (imeState.flags.imeUiMode) {
+            when (activeImeUiMode) {
                 ImeUiMode.TEXT -> TextInputLayout()
                 ImeUiMode.MEDIA -> ProvideActualLayoutDirection { MediaInputLayout() }
                 ImeUiMode.CLIPBOARD -> ProvideActualLayoutDirection { ClipboardInputLayout() }

@@ -468,6 +468,7 @@
     "foreground": "var(--primary)"
   },
   "media-bottom-row-button": {
+    "font-size": "22sp",
     "padding": "16dp 0dp",
     "shape": "var(--shape)"
   },
