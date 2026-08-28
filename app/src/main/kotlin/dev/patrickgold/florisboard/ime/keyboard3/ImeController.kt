@@ -60,8 +60,10 @@ val LocalImeController = staticCompositionLocalOf<ImeController> {
     error("No IME controller is associated with this composition tree.")
 }
 
-class ImeController : K3InputMethod<ImeState, ImeEditor, ImeController.UpdateImeStateScope>(
-    initialState = ImeState(),
+class ImeController(
+    initialState: ImeState = ImeState(),
+) : K3InputMethod<ImeState, ImeEditor, ImeController.UpdateImeStateScope>(
+    initialState = initialState,
 ) {
     private val prefs by FlorisPreferenceStore
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())

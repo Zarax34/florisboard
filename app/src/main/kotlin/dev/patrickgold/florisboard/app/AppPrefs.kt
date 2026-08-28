@@ -283,6 +283,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "emoji__suggestion_candidate_max_count",
             default = 5,
         )
+        // TODO remove with emoji search PR!
+        val experimentalEmojiSearchEnabled = boolean(
+            key = "emoji__experimental_emoji_search_enabled",
+            default = false,
+        )
     }
 
     val gestures = Gestures()

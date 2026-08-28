@@ -30,8 +30,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Backspace
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,25 +46,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.input.InputEventDispatcher
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiData
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiPaletteView
+import dev.patrickgold.florisboard.ime.media.emoji.EmojiSearchLayout
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.jetpref.datastore.model.collectAsState
 import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.ui.SnyggBox
+import org.florisboard.lib.snygg.ui.SnyggButton
 import org.florisboard.lib.snygg.ui.SnyggColumn
+import org.florisboard.lib.snygg.ui.SnyggIcon
 import org.florisboard.lib.snygg.ui.SnyggRow
+import org.florisboard.lib.snygg.ui.SnyggText
 
 @SuppressLint("MutableCollectionMutableState")
 @Composable
 fun MediaInputLayout(
     modifier: Modifier = Modifier,
 ) {
+    val prefs by FlorisPreferenceStore
     val context = LocalContext.current
     val keyboardManager by context.keyboardManager()
 
@@ -71,41 +80,64 @@ fun MediaInputLayout(
         emojiLayoutDataMap = EmojiData.get(context, "ime/media/emoji/root.txt")
     }
 
-    SnyggColumn(
-        elementName = FlorisImeUi.Media.elementName,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(FlorisImeSizing.imeUiHeight()),
-    ) {
-        EmojiPaletteView(
-            modifier = Modifier.weight(1f),
-            fullEmojiMappings = emojiLayoutDataMap,
-        )
-        SnyggRow(
-            elementName = FlorisImeUi.MediaBottomRow.elementName,
-            modifier = Modifier
+    var isEmojiSearch by remember { mutableStateOf(false) }
+    if (isEmojiSearch) {
+        EmojiSearchLayout()
+    } else {
+        SnyggColumn(
+            elementName = FlorisImeUi.Media.elementName,
+            modifier = modifier
                 .fillMaxWidth()
-                .height(FlorisImeSizing.keyboardRowBaseHeight * 0.8f),
+                .height(FlorisImeSizing.imeUiHeight()),
         ) {
-            KeyboardLikeButton(
-                elementName = FlorisImeUi.MediaBottomRowButton.elementName,
-                inputEventDispatcher = keyboardManager.inputEventDispatcher,
-                keyData = TextKeyData.IME_UI_MODE_TEXT,
-                modifier = Modifier.fillMaxHeight(),
+            EmojiPaletteView(
+                modifier = Modifier.weight(1f),
+                fullEmojiMappings = emojiLayoutDataMap,
+            )
+            SnyggRow(
+                elementName = FlorisImeUi.MediaBottomRow.elementName,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(FlorisImeSizing.keyboardRowBaseHeight * 0.8f),
             ) {
-                Text(
-                    text = "ABC",
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            KeyboardLikeButton(
-                elementName = FlorisImeUi.MediaBottomRowButton.elementName,
-                inputEventDispatcher = keyboardManager.inputEventDispatcher,
-                keyData = TextKeyData.DELETE,
-                modifier = Modifier.fillMaxHeight(),
-            ) {
-                Icon(imageVector = Icons.AutoMirrored.Outlined.Backspace, contentDescription = null)
+                KeyboardLikeButton(
+                    elementName = FlorisImeUi.MediaBottomRowButton.elementName,
+                    inputEventDispatcher = keyboardManager.inputEventDispatcher,
+                    keyData = TextKeyData.IME_UI_MODE_TEXT,
+                    modifier = Modifier.fillMaxHeight(),
+                ) {
+                    Text(
+                        text = "ABC",
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                // TODO no feature gate once emoji search PR is implemented!
+                val experimentalEmojiSearch by prefs.emoji.experimentalEmojiSearchEnabled.collectAsState()
+                if (experimentalEmojiSearch) {
+                    SnyggButton(
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .align(Alignment.CenterVertically),
+                        onClick = { isEmojiSearch = true },
+                    ) {
+                        SnyggIcon(
+                            imageVector = Icons.Default.Search,
+                        )
+                        SnyggText(
+                            text = "Search",
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                KeyboardLikeButton(
+                    elementName = FlorisImeUi.MediaBottomRowButton.elementName,
+                    inputEventDispatcher = keyboardManager.inputEventDispatcher,
+                    keyData = TextKeyData.DELETE,
+                    modifier = Modifier.fillMaxHeight(),
+                ) {
+                    Icon(imageVector = Icons.AutoMirrored.Outlined.Backspace, contentDescription = null)
+                }
             }
         }
     }
