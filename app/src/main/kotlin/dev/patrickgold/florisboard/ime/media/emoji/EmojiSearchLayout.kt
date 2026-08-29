@@ -48,7 +48,7 @@ import dev.patrickgold.florisboard.ime.keyboard3.ImeController
 import dev.patrickgold.florisboard.ime.keyboard3.ImeEditor
 import dev.patrickgold.florisboard.ime.keyboard3.ImeState
 import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
-import dev.patrickgold.florisboard.ime.keyboard3.ui.ImeKeyboardLayout
+import dev.patrickgold.florisboard.ime.keyboard3.ui.ImeKeyboardBox
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import kotlinx.coroutines.launch
@@ -175,7 +175,7 @@ fun EmojiSearchLayout(
                     )
                 }
             }
-            ImeKeyboardLayout()
+            ImeKeyboardBox()
         }
     }
 }

@@ -24,10 +24,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard3.ImeController
 import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
+import dev.patrickgold.florisboard.ime.keyboard3.touch.TouchKey
+import dev.patrickgold.florisboard.ime.keyboard3.touch.TouchKeyboard
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -76,9 +79,9 @@ class PointerTracker(
 ) {
     val trackedPointers = mutableStateMapOf<PointerId, TrackedPointer>()
 
-    fun onDown(down: PointerInputChange) {
+    fun onDown(down: PointerInputChange, size: IntSize) {
         val downLayerId = imeController.snapshotState().touchLayerId
-        val downKey = touchKeyboard.findKey(downLayerId, down.position) ?: return
+        val downKey = touchKeyboard.findKey(downLayerId, down.position.normalized(size)) ?: return
         down.consume()
 
         val trackedPointer = TrackedPointer(
@@ -105,14 +108,14 @@ class PointerTracker(
         }
     }
 
-    fun onMove(move: PointerInputChange) {
+    fun onMove(move: PointerInputChange, size: IntSize) {
         val trackedPointer = trackedPointers[move.id] ?: return
         move.consume()
         if (trackedPointer.peekLayerId != null) {
             val distanceSq = (move.position - trackedPointer.down.position).getDistanceSquared()
             if (trackedPointer.peekLine != null || distanceSq >= peekDistanceSqMin) {
                 val oldPeekKey = trackedPointer.peekKey
-                val newPeekKey = touchKeyboard.findKey(trackedPointer.peekLayerId, move.position)
+                val newPeekKey = touchKeyboard.findKey(trackedPointer.peekLayerId, move.position.normalized(size))
                 if (newPeekKey !== oldPeekKey) {
                     oldPeekKey?.numPointersFocused?.update { it - 1 }
                     newPeekKey?.numPointersFocused?.update { it + 1 }
@@ -126,7 +129,7 @@ class PointerTracker(
         }
     }
 
-    fun onUp(up: PointerInputChange) {
+    fun onUp(up: PointerInputChange, size: IntSize) {
         val trackedPointer = trackedPointers[up.id] ?: return
         if (trackedPointer.downKey.data.layerId == null) {
             trackedPointer.downKey.numPointersFocused.update { it - 1 }
@@ -169,5 +172,9 @@ class PointerTracker(
             }
         }
         trackedPointers.remove(id)
+    }
+
+    private fun Offset.normalized(size: IntSize): Offset {
+        return Offset(x / size.width, y / size.height)
     }
 }
