@@ -18,10 +18,10 @@ package dev.patrickgold.florisboard.ime.keyboard3.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.unit.takeOrElse
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -55,6 +56,7 @@ import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.ime.window.LocalWindowController
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
+import org.florisboard.lib.snygg.SnyggQueryAttributes
 import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.k3lp.model.layer.K3LayerId
@@ -67,10 +69,19 @@ fun ImeKeyboardLayout(
     val prefs by FlorisPreferenceStore
     val density = LocalDensity.current
     val imeController = LocalImeController.current
+    val windowController = LocalWindowController.current
 
     val imeState by imeController.activeState.collectAsState()
     val model by remember { derivedStateOf { imeState.model } }
     val touchLayerId by remember { derivedStateOf { imeState.touchLayerId } }
+
+    val windowSpec by windowController.activeWindowSpec.collectAsState()
+    val keyMargin = remember(windowSpec.keyMarginH, windowSpec.keyMarginV) {
+        PaddingValues(
+            horizontal = windowSpec.keyMarginH.takeOrElse { 0.dp },
+            vertical = windowSpec.keyMarginV.takeOrElse { 0.dp },
+        )
+    }
 
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val keyboardWidthDp = with(density) { constraints.maxWidth.toDp() }
@@ -158,7 +169,7 @@ fun ImeKeyboardLayout(
                 if (touchKey.data.gap) {
                     continue
                 }
-                TouchKeyboardKeyBox(touchKey)
+                TouchKeyboardKeyBox(touchKey, keyMargin)
             }
         }
     }
@@ -167,16 +178,18 @@ fun ImeKeyboardLayout(
 @Composable
 private fun TouchKeyboardKeyBox(
     touchKey: TouchKey,
-    modifier: Modifier = Modifier,
+    keyMargin: PaddingValues = PaddingValues.Zero,
 ) {
-    val windowController = LocalWindowController.current
-    val windowSpec by windowController.activeWindowSpec.collectAsState()
+    val label = touchKey.label // TODO for space replace label by active subtype language
+    val output = touchKey.data.output
+    val attributes: SnyggQueryAttributes = remember(output) {
+        buildMap {
+            if (output != null) {
+                put(FlorisImeUi.Attr.Output, output.asAttrValue())
+            }
+        }
+    }
 
-//    val attributes = mapOf(
-//        FlorisImeUi.Attr.Code to key.computedData.code,
-//        FlorisImeUi.Attr.Mode to evaluator.keyboard.mode.toString(),
-//        FlorisImeUi.Attr.ShiftState to evaluator.state.inputShiftState.toString(),
-//    )
     val numPointersFocused by touchKey.numPointersFocused.collectAsState()
     val selector by remember {
         derivedStateOf {
@@ -186,9 +199,9 @@ private fun TouchKeyboardKeyBox(
 
     SnyggBox(
         FlorisImeUi.Key.elementName,
-        attributes = emptyMap(),
+        attributes = attributes,
         selector = selector,
-        modifier = modifier
+        modifier = Modifier
             .layout { measurable, _ ->
                 val width = touchKey.bounds.width.roundToInt()
                 val height = touchKey.bounds.height.roundToInt()
@@ -197,13 +210,13 @@ private fun TouchKeyboardKeyBox(
                 val placeable = measurable.measure(constraints)
                 layout(placeable.width, placeable.height) { placeable.place(offset) }
             }
-            .padding(windowSpec.keyMarginH, windowSpec.keyMarginV),
+            .padding(keyMargin),
     ) {
         Label3(
-            value = touchKey.label,
             modifier = Modifier
                 .wrapContentSize()
                 .align(Alignment.Center),
+            value = label,
         )
     }
 }

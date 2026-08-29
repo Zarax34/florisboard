@@ -83,11 +83,25 @@
     "background": "var(--primary)",
     "foreground": "var(--on-surface)"
   },
+  "key[output=`@k3:action/enter`]": {
+    "background": "var(--primary)",
+    "foreground": "var(--on-surface)"
+  },
   "key[code=10]:pressed": {
     "background": "var(--primary-variant)",
     "foreground": "var(--on-surface)"
   },
+  "key[output=`@k3:action/enter`]:pressed": {
+    "background": "var(--primary-variant)",
+    "foreground": "var(--on-surface)"
+  },
   "key[code=32]": {
+    "background": "var(--surface)",
+    "foreground": "var(--on-surface-variant)",
+    "font-size": "12sp",
+    "text-overflow": "ellipsis"
+  },
+  "key[output=` `]": {
     "background": "var(--surface)",
     "foreground": "var(--on-surface-variant)",
     "font-size": "12sp",
