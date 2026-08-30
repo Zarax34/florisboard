@@ -67,7 +67,7 @@ class TouchKeyboard(
         }
         // TODO improve runtime of this
         for (key in layer.keys) {
-            if (key.bounds.contains(position)) {
+            if (key.hitbox.contains(position)) {
                 return key
             }
         }
@@ -97,6 +97,7 @@ class TouchLayer(
 
 class TouchKey(
     val bounds: Rect,
+    val hitbox: Rect,
     val label: K3StringOrDescriptor,
     val data: K3Key,
     val flick: K3Flick?,
@@ -173,8 +174,27 @@ private fun computeTouchKeyboard(
                     offset = Offset(currentX, currentY),
                     size = Size(keyWidthPx, keyHeight),
                 )
+                val hitbox = when (i) {
+                    // if first key -> extend to left edge of keyboard
+                    0 -> {
+                        Rect(
+                            offset = Offset(0f, currentY),
+                            size = Size(currentX + keyWidthPx, keyHeight),
+                        )
+                    }
+                    // if last key -> extend to right edge of keyboard
+                    row.size - 1 -> {
+                        Rect(
+                            offset = Offset(currentX, currentY),
+                            size = Size(1f - currentX, keyHeight),
+                        )
+                    }
+                    // else same as bounds
+                    else -> keyBoundsPx
+                }
                 val touchKey = TouchKey(
                     bounds = keyBoundsPx,
+                    hitbox = hitbox,
                     label = computeKeyDisplay(model, key),
                     data = key,
                     flick = key.flickId?.let { model.flicks.byFlickId[it] },
@@ -187,6 +207,7 @@ private fun computeTouchKeyboard(
         }
         TouchLayer(touchKeys.toList())
     }
+
     return TouchKeyboard(
         layers = touchLayers,
         rowCount = rowCount,
