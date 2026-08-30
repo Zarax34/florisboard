@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.keyboard3.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,13 +47,15 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.keyboard3.touch.TouchKey
-import dev.patrickgold.florisboard.ime.keyboard3.touch.TouchKeyboard
 import dev.patrickgold.florisboard.ime.keyboard3.touch.TouchLayer
-import dev.patrickgold.florisboard.ime.keyboard3.touch.doComputeTouchKeyboard
+import dev.patrickgold.florisboard.ime.keyboard3.touch.TouchModel
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.ime.window.LocalWindowController
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
+import org.florisboard.lib.compose.toMm
 import org.florisboard.lib.snygg.SnyggQueryAttributes
 import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.ui.SnyggBox
@@ -79,100 +82,108 @@ fun ImeKeyboardBox(
         derivedStateOf { with(density) { windowSpec.keyMarginV.toPx() } }
     }
 
-    // TODO this must be cached beyond this composable to prevent flashes
-    //   during media/clipboard -> text switch
-    var activeTouchKeyboard by remember { mutableStateOf(TouchKeyboard.Empty) }
-    val activeTouchLayer by remember {
-        derivedStateOf {
+    var activeTouchModel by remember {
+        mutableStateOf(imeController.touchModelCache.getFor(model) ?: TouchModel.Empty)
+    }
+    LaunchedEffect(model) {
+        activeTouchModel = withContext(Dispatchers.Default) {
+            imeController.touchModelCache.getOrComputeFor(model)
+        }
+    }
+
+    BoxWithConstraints {
+        val deviceWidthMm = remember(constraints.maxWidth) {
+            with(density) { constraints.maxWidth.toDp().toMm().toInt() }
+        }
+        val activeTouchKeyboard = remember(activeTouchModel, deviceWidthMm) {
+            activeTouchModel.selectKeyboard(deviceWidthMm)
+        }
+        val activeTouchLayer = remember(activeTouchKeyboard, touchLayerId) {
             activeTouchKeyboard.layers[touchLayerId]
                 ?: activeTouchKeyboard.layers[K3LayerId.BASE]
                 ?: TouchLayer.Empty
         }
-    }
-    val pointerTracker = rememberPointerTracker(activeTouchKeyboard)
+        val pointerTracker = rememberPointerTracker(activeTouchKeyboard)
 
-    val keyboardRowHeightDp = FlorisImeSizing.keyboardRowBaseHeight
-    val peekLineWidthPx = with(density) { 8.dp.toPx() }
+        val keyboardRowHeightDp = FlorisImeSizing.keyboardRowBaseHeight
+        val peekLineWidthPx = with(density) { 8.dp.toPx() }
 
-    LaunchedEffect(model) {
-        activeTouchKeyboard = doComputeTouchKeyboard(model, Int.MAX_VALUE)
-    }
-
-    Box(
-        modifier = modifier
-            .layout { measurable, constraints ->
-                val effConstraints = Constraints.fixed(
-                    width = constraints.maxWidth,
-                    height = with(density) {
-                        (keyboardRowHeightDp * activeTouchKeyboard.rowCount).roundToPx()
-                    },
+        Box(
+            modifier = modifier
+                .layout { measurable, constraints ->
+                    val effConstraints = Constraints.fixed(
+                        width = constraints.maxWidth,
+                        height = with(density) {
+                            (keyboardRowHeightDp * activeTouchKeyboard.rowCount).roundToPx()
+                        },
+                    )
+                    val placeable = measurable.measure(effConstraints)
+                    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                }
+                .pointerInput(Unit) {
+                    val currentContext = currentCoroutineContext()
+                    awaitPointerEventScope {
+                        while (currentContext.isActive) {
+                            // TODO this pointer logic is VERY KEEN on sending up, even survives
+                            //  mouse leave&re-enter in the emulator => OOB checks
+                            val event = awaitPointerEvent()
+                            // TODO evaluate this cancellation logic
+                            pointerTracker.trackedPointers.forEach { (id, _) ->
+                                val change = event.changes.fastFirstOrNull { it.id == id }
+                                if (change == null) {
+                                    // TODO does snapshot map not throw ConcurrentModificationException ??
+                                    pointerTracker.onCancel(id)
+                                }
+                            }
+                            event.changes.fastForEach { change ->
+                                if (change.changedToDown()) {
+                                    pointerTracker.onDown(change, size)
+                                } else if (change.changedToUp()) {
+                                    pointerTracker.onUp(change, size)
+                                } else if (!change.isConsumed) {
+                                    pointerTracker.onMove(change, size)
+                                }
+                            }
+                        }
+                    }
+                }
+                .drawWithContent {
+                    drawContent()
+                    for ((_, trackedPointer) in pointerTracker.trackedPointers) {
+                        val peekLine = trackedPointer.peekLine
+                        if (trackedPointer.peekLine != null) {
+                            drawLine(
+                                color = Color.Red, // TODO customizable
+                                start = peekLine.start,
+                                end = peekLine.end,
+                                strokeWidth = peekLineWidthPx,
+                                cap = StrokeCap.Round,
+                            )
+                        }
+                    }
+                }
+        ) {
+            for (touchKey in activeTouchLayer.keys) {
+                if (touchKey.data.gap) {
+                    continue
+                }
+                ImeKeyboardKeyBox(
+                    modifier = Modifier
+                        .layout { measurable, constraints ->
+                            val effConstraints = Constraints.fixed(
+                                width = (constraints.maxWidth * touchKey.bounds.width - 2 * keyMarginHPx).fastRoundToInt(),
+                                height = (constraints.maxHeight * touchKey.bounds.height - 2 * keyMarginVPx).fastRoundToInt(),
+                            )
+                            val placeable = measurable.measure(effConstraints)
+                            val offset = IntOffset(
+                                x = (constraints.maxWidth * touchKey.bounds.topLeft.x + keyMarginHPx).fastRoundToInt(),
+                                y = (constraints.maxHeight * touchKey.bounds.topLeft.y + keyMarginVPx).fastRoundToInt(),
+                            )
+                            layout(placeable.width, placeable.height) { placeable.place(offset) }
+                        },
+                    touchKey = touchKey,
                 )
-                val placeable = measurable.measure(effConstraints)
-                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
             }
-            .pointerInput(Unit) {
-                val currentContext = currentCoroutineContext()
-                awaitPointerEventScope {
-                    while (currentContext.isActive) {
-                        // TODO this pointer logic is VERY KEEN on sending up, even survives
-                        //  mouse leave&re-enter in the emulator => OOB checks
-                        val event = awaitPointerEvent()
-                        // TODO evaluate this cancellation logic
-                        pointerTracker.trackedPointers.forEach { (id, _) ->
-                            val change = event.changes.fastFirstOrNull { it.id == id }
-                            if (change == null) {
-                                // TODO does snapshot map not throw ConcurrentModificationException ??
-                                pointerTracker.onCancel(id)
-                            }
-                        }
-                        event.changes.fastForEach { change ->
-                            if (change.changedToDown()) {
-                                pointerTracker.onDown(change, size)
-                            } else if (change.changedToUp()) {
-                                pointerTracker.onUp(change, size)
-                            } else if (!change.isConsumed) {
-                                pointerTracker.onMove(change, size)
-                            }
-                        }
-                    }
-                }
-            }
-            .drawWithContent {
-                drawContent()
-                for ((_, trackedPointer) in pointerTracker.trackedPointers) {
-                    val peekLine = trackedPointer.peekLine
-                    if (trackedPointer.peekLine != null) {
-                        drawLine(
-                            color = Color.Red, // TODO customizable
-                            start = peekLine.start,
-                            end = peekLine.end,
-                            strokeWidth = peekLineWidthPx,
-                            cap = StrokeCap.Round,
-                        )
-                    }
-                }
-            }
-    ) {
-        for (touchKey in activeTouchLayer.keys) {
-            if (touchKey.data.gap) {
-                continue
-            }
-            ImeKeyboardKeyBox(
-                modifier = Modifier
-                    .layout { measurable, constraints ->
-                        val effConstraints = Constraints.fixed(
-                            width = (constraints.maxWidth * touchKey.bounds.width - 2 * keyMarginHPx).fastRoundToInt(),
-                            height = (constraints.maxHeight * touchKey.bounds.height - 2 * keyMarginVPx).fastRoundToInt(),
-                        )
-                        val placeable = measurable.measure(effConstraints)
-                        val offset = IntOffset(
-                            x = (constraints.maxWidth * touchKey.bounds.topLeft.x + keyMarginHPx).fastRoundToInt(),
-                            y = (constraints.maxHeight * touchKey.bounds.topLeft.y + keyMarginVPx).fastRoundToInt(),
-                        )
-                        layout(placeable.width, placeable.height) { placeable.place(offset) }
-                    },
-                touchKey = touchKey,
-            )
         }
     }
 }

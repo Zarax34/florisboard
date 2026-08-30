@@ -30,6 +30,7 @@ import dev.patrickgold.florisboard.ime.editor.InputAttributes
 import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.keyboard.IncognitoMode
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
+import dev.patrickgold.florisboard.ime.keyboard3.touch.TouchModelCache
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionType
 import dev.patrickgold.florisboard.ime.nlp.BreakIterators
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
@@ -62,6 +63,7 @@ val LocalImeController = staticCompositionLocalOf<ImeController> {
 
 class ImeController(
     initialState: ImeState = ImeState(),
+    val touchModelCache: TouchModelCache = TouchModelCache(),
 ) : K3InputMethod<ImeState, ImeEditor, ImeController.UpdateImeStateScope>(
     initialState = initialState,
 ) {

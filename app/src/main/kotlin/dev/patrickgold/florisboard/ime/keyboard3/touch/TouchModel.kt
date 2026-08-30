@@ -19,6 +19,9 @@ package dev.patrickgold.florisboard.ime.keyboard3.touch
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.k3lp.lib.text.K3StringOrDescriptor
 import org.k3lp.lib.text.asK3String
@@ -26,16 +29,40 @@ import org.k3lp.model.K3Model
 import org.k3lp.model.flick.K3Flick
 import org.k3lp.model.key.K3Key
 import org.k3lp.model.layer.K3LayerId
+import org.k3lp.model.layer.K3TouchLayers
 import kotlin.math.roundToInt
 
+sealed interface TouchModel {
+    fun selectKeyboard(deviceWidthMm: Int): TouchKeyboard
+
+    object Empty : TouchModel {
+        override fun selectKeyboard(deviceWidthMm: Int): TouchKeyboard {
+            return TouchKeyboard.Empty
+        }
+    }
+
+    class Single(val keyboard: TouchKeyboard) : TouchModel {
+        override fun selectKeyboard(deviceWidthMm: Int): TouchKeyboard {
+            return keyboard
+        }
+    }
+
+    class Multiple(val keyboards: List<TouchKeyboard>) : TouchModel {
+        override fun selectKeyboard(deviceWidthMm: Int): TouchKeyboard {
+            return keyboards.lastOrNull { it.minDeviceWidthMm <= deviceWidthMm }
+                ?: keyboards[0]
+        }
+    }
+}
+
 class TouchKeyboard(
-    val bounds: Rect,
     val layers: Map<K3LayerId, TouchLayer>,
     val rowCount: Int,
+    val minDeviceWidthMm: Int,
 ) {
     fun findKey(layerId: K3LayerId, position: Offset): TouchKey? {
         val layer = layers[layerId]
-        if (layer == null || !bounds.contains(position)) {
+        if (layer == null || !NormalizedBounds.contains(position)) {
             return null
         }
         // TODO improve runtime of this
@@ -48,14 +75,14 @@ class TouchKeyboard(
     }
 
     companion object {
-        val GenericBounds = Rect(Offset.Zero, Size(1f, 1f))
+        val NormalizedBounds = Rect(Offset.Zero, Size(1f, 1f))
 
         val Empty = TouchKeyboard(
-            bounds = GenericBounds,
             layers = mapOf(
                 K3LayerId.BASE to TouchLayer.Empty,
             ),
             rowCount = 4,
+            minDeviceWidthMm = 0,
         )
     }
 }
@@ -76,13 +103,28 @@ class TouchKey(
     val numPointersFocused: MutableStateFlow<Int>,
 )
 
-fun doComputeTouchKeyboard(
+context(scope: CoroutineScope)
+suspend fun computeTouchModel(
     model: K3Model,
-    deviceWidthMm: Int,
+): TouchModel {
+    val layersGroups = model.layersByForm.touch
+    return when (layersGroups.size) {
+        0 -> TouchModel.Empty
+        1 -> TouchModel.Single(computeTouchKeyboard(model, layersGroups[0]))
+        else -> {
+            val keyboards = layersGroups.map { layersGroup ->
+                scope.async { computeTouchKeyboard(model, layersGroup) }
+            }.awaitAll()
+            TouchModel.Multiple(keyboards)
+        }
+    }
+}
+
+private fun computeTouchKeyboard(
+    model: K3Model,
+    layersGroup: K3TouchLayers,
 ): TouchKeyboard {
-    val layers = model.layersByForm.touch.lastOrNull { it.minDeviceWidth <= deviceWidthMm }
-        ?.layers
-        ?: return TouchKeyboard.Empty
+    val layers = layersGroup.layers
     val rowCount = layers.maxOf { (_, layer) -> layer.rows.size }.coerceAtLeast(4)
 
     val touchLayers = layers.mapValues { (_, layer) ->
@@ -133,7 +175,7 @@ fun doComputeTouchKeyboard(
                 )
                 val touchKey = TouchKey(
                     bounds = keyBoundsPx,
-                    label = doComputeKeyDisplay(model, key),
+                    label = computeKeyDisplay(model, key),
                     data = key,
                     flick = key.flickId?.let { model.flicks.byFlickId[it] },
                     numPointersFocused = MutableStateFlow(0),
@@ -146,13 +188,13 @@ fun doComputeTouchKeyboard(
         TouchLayer(touchKeys.toList())
     }
     return TouchKeyboard(
-        bounds = TouchKeyboard.GenericBounds,
         layers = touchLayers,
         rowCount = rowCount,
+        minDeviceWidthMm = layersGroup.minDeviceWidth,
     )
 }
 
-fun doComputeKeyDisplay(model: K3Model, key: K3Key): K3StringOrDescriptor {
+private fun computeKeyDisplay(model: K3Model, key: K3Key): K3StringOrDescriptor {
     val displayByKey = model.displays.byKeyId[key.id]
     if (displayByKey != null) {
         return displayByKey.display
