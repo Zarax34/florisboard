@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
-import dev.patrickgold.florisboard.ime.keyboard3.ImeIcons
 import dev.patrickgold.florisboard.ime.keyboard3.ImeState
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import kotlinx.serialization.SerialName
@@ -161,45 +160,5 @@ fun QuickAction.computeTooltip(imeState: ImeState): String {
             else -> R.string.general__invalid_fatal
         })
         else -> "unsupported"
-    }
-}
-
-@Composable
-fun QuickAction.computeIcon(imeState: ImeState): K3Descriptor? {
-    return when (this) {
-        is QuickAction.InsertK3Descriptor -> when (descriptor) {
-            ImeActions.ArrowDown -> ImeIcons.ArrowDown
-            ImeActions.ArrowLeft -> ImeIcons.ArrowLeft
-            ImeActions.ArrowRight -> ImeIcons.ArrowRight
-            ImeActions.ArrowUp -> ImeIcons.ArrowUp
-            ImeActions.ClipboardClearPrimaryClip -> ImeIcons.ClipboardClearPrimaryClip
-            ImeActions.ClipboardCopy -> ImeIcons.ClipboardCopy
-            ImeActions.ClipboardCut -> ImeIcons.ClipboardCut
-            ImeActions.ClipboardPaste -> ImeIcons.ClipboardPaste
-            ImeActions.SelectAll -> ImeIcons.SelectAll
-            ImeActions.Settings -> ImeIcons.Settings
-            ImeActions.ShowMediaPanel -> ImeIcons.MediaPanel
-            ImeActions.ShowClipboardPanel -> ImeIcons.ClipboardPanel
-            ImeActions.HideImeWindow -> ImeIcons.HideKeyboard
-            ImeActions.LanguageSwitch -> ImeIcons.LanguageSwitch
-            ImeActions.ToggleActionsOverflow -> ImeIcons.ToggleActionsOverflow
-            ImeActions.ToggleAutocorrect -> ImeIcons.ToggleAutocorrect
-            // TODO: In the future this will be merged into the resize keyboard panel, for now it is a separate action
-            ImeActions.ToggleCompactLayout -> ImeIcons.ToggleCompactLayout
-            ImeActions.ToggleFloatingWindow -> ImeIcons.ToggleFloatingWindow
-            ImeActions.TogglePersonalizedLearning -> null // TODO
-            ImeActions.ToggleResizeMode -> ImeIcons.ToggleResizeMode
-            ImeActions.Undo -> ImeIcons.Undo
-            ImeActions.Redo -> ImeIcons.Redo
-            ImeActions.ExternalVoiceInput -> ImeIcons.Voice
-            ImeActions.NoopDragMarker -> if (imeState.flags.debugShowDragAndDropHelpers) {
-                ImeIcons.DragMarker
-            } else {
-                null
-            }
-            ImeActions.NoopSpacer -> ImeIcons.Close
-            else -> null
-        }
-        else -> null
     }
 }

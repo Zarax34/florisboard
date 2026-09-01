@@ -217,11 +217,11 @@ private fun ImeKeyboardKeyBox(
         selector = selector,
         modifier = modifier,
     ) {
-        Label3(
+        Display3(
             modifier = Modifier
                 .wrapContentSize()
                 .align(Alignment.Center),
-            value = label,
+            display = label,
         )
     }
 }

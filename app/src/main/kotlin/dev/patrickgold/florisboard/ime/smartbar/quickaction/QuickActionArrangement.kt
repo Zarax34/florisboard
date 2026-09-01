@@ -36,6 +36,7 @@ val QuickActionJsonConfig = Json(DefaultJsonConfig) {
         polymorphic(QuickAction::class) {
             subclass(QuickAction.InsertKey::class, QuickAction.InsertKey.serializer())
             subclass(QuickAction.InsertText::class, QuickAction.InsertText.serializer())
+            subclass(QuickAction.InsertK3Descriptor::class, QuickAction.InsertK3Descriptor.serializer())
             defaultDeserializer { QuickAction.InsertKey.serializer() }
         }
     }

@@ -251,6 +251,11 @@ class ImeController(
         override fun emitDescriptor(descriptor: K3Descriptor) {
             val windowController = FlorisImeService.windowControllerOrNull()
             when (descriptor) {
+                // TODO evaluate use of modern cursor anchor API instead of sending raw key events
+                ImeActions.ArrowDown -> state.editor.sendDownUpKeyEvent(KeyEvent.KEYCODE_DPAD_DOWN)
+                ImeActions.ArrowLeft -> state.editor.sendDownUpKeyEvent(KeyEvent.KEYCODE_DPAD_LEFT)
+                ImeActions.ArrowRight -> state.editor.sendDownUpKeyEvent(KeyEvent.KEYCODE_DPAD_RIGHT)
+                ImeActions.ArrowUp -> state.editor.sendDownUpKeyEvent(KeyEvent.KEYCODE_DPAD_UP)
                 ImeActions.Delete -> emitForwardDelete()
                 ImeActions.Settings -> FlorisImeService.launchSettings()
                 ImeActions.ShowTextPanel -> {

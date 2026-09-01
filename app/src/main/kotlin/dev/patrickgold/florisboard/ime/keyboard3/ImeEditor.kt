@@ -86,24 +86,32 @@ open class ImeEditor(
         ic.performEditorAction(action.toInt())
     }
 
-    fun sendDownUpKeyEvent(keyCode: Int) {
-        val ic = ic.get() ?: return
-        val downTime = SystemClock.uptimeMillis()
-        ic.sendKeyEvent(
+    private fun InputConnection.sendDownKeyEvent(keyCode: Int, downTime: Long) {
+        sendKeyEvent(
             KeyEvent(
                 downTime, downTime,
                 KeyEvent.ACTION_DOWN, keyCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
                 KeyEvent.FLAG_SOFT_KEYBOARD or KeyEvent.FLAG_KEEP_TOUCH_MODE
             )
         )
-        val upTime = SystemClock.uptimeMillis()
-        ic.sendKeyEvent(
+    }
+
+    private fun InputConnection.sendUpKeyEvent(keyCode: Int, downTime: Long, upTime: Long) {
+        sendKeyEvent(
             KeyEvent(
                 downTime, upTime,
                 KeyEvent.ACTION_UP, keyCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
                 KeyEvent.FLAG_SOFT_KEYBOARD or KeyEvent.FLAG_KEEP_TOUCH_MODE
             )
         )
+    }
+
+    fun sendDownUpKeyEvent(keyCode: Int) {
+        val ic = ic.get() ?: return
+        val downTime = SystemClock.uptimeMillis()
+        ic.sendDownKeyEvent(keyCode, downTime)
+        val upTime = SystemClock.uptimeMillis()
+        ic.sendUpKeyEvent(keyCode, downTime, upTime)
     }
 
     override fun setComposition(newComposition: K3TextRange?) {

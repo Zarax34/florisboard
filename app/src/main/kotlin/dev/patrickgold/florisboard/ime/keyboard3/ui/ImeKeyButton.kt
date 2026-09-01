@@ -23,6 +23,7 @@ import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -34,7 +35,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.keyboard3.interaction.InteractionKind
 import dev.patrickgold.florisboard.ime.keyboard3.interaction.LocalInteractionController
@@ -55,7 +55,24 @@ import org.k3lp.lib.text.unicode.NormalizationForm
 fun ImeKeyButton(
     elementName: String? = null,
     output: K3StringOrDescriptor,
+    isEnabled: Boolean = true,
     modifier: Modifier = Modifier,
+) {
+    ImeKeyButton(elementName, output, isEnabled, modifier) { display ->
+        Display3(
+            modifier = Modifier.fillMaxHeight(),
+            display = display,
+        )
+    }
+}
+
+@Composable
+fun ImeKeyButton(
+    elementName: String? = null,
+    output: K3StringOrDescriptor,
+    isEnabled: Boolean = true,
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.(K3StringOrDescriptor) -> Unit,
 ) {
     val imeController = LocalImeController.current
     val interactionController = LocalInteractionController.current
@@ -63,11 +80,7 @@ fun ImeKeyButton(
 
     val imeState by imeController.activeState.collectAsState()
     val model by remember { derivedStateOf { imeState.model } }
-    val label by remember(output) {
-        derivedStateOf {
-            model.displays.byOutput[output]?.display ?: output
-        }
-    }
+    val display = remember(model, output) { model.displays.byOutput[output]?.display ?: output }
 
     val isRepeatable = output.isRepeatable()
     val keyRepeatTimeout = interactionController.getKeyRepeatTimeout(output)
@@ -80,15 +93,21 @@ fun ImeKeyButton(
             FlorisImeUi.Attr.Output to output.asAttrValue(),
         )
     }
-    val selector = if (isPressed) { SnyggSelector.PRESSED } else { SnyggSelector.NONE }
+    val selector = when {
+        isPressed -> SnyggSelector.PRESSED
+        !isEnabled -> SnyggSelector.DISABLED
+        else -> SnyggSelector.NONE
+    }
 
     SnyggBox(
         elementName = elementName,
         attributes = attributes,
         selector = selector,
-        clickAndSemanticsModifier = modifier
+        modifier = modifier,
+        clickAndSemanticsModifier = Modifier
             .indication(interactionSource, ripple())
-            .pointerInput(Unit) {
+            .pointerInput(isEnabled) {
+                if (!isEnabled) return@pointerInput
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = true)
                     down.consume()
@@ -127,11 +146,7 @@ fun ImeKeyButton(
             },
         contentAlignment = Alignment.Center,
     ) {
-        Label3(
-            modifier = Modifier.fillMaxHeight(),
-            value = label,
-        )
-        LocalHapticFeedback
+        content(display)
     }
 }
 

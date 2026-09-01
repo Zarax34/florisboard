@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.keyboard3.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import org.florisboard.lib.snygg.ui.SnyggText
 import org.k3lp.lib.text.K3Descriptor
@@ -24,21 +25,25 @@ import org.k3lp.lib.text.K3String
 import org.k3lp.lib.text.K3StringOrDescriptor
 
 @Composable
-fun Label3(
-    value: K3StringOrDescriptor,
+fun Display3(
+    display: K3StringOrDescriptor,
     modifier: Modifier = Modifier,
+    elementName: String? = null,
 ) {
-    when (value) {
+    when (display) {
         is K3String -> {
+            val text = remember(display) { display.toText() }
             SnyggText(
+                text = text,
                 modifier = modifier,
-                text = value.toText(),
+                elementName = elementName,
             )
         }
         is K3Descriptor -> {
             Icon3(
+                value = display,
                 modifier = modifier,
-                value = value,
+                elementName = elementName,
             )
         }
     }

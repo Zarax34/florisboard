@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.FontDownload
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.KeyboardHide
 import androidx.compose.material.icons.filled.KeyboardVoice
 import androidx.compose.material.icons.filled.Language
@@ -65,6 +66,7 @@ import org.k3lp.lib.text.K3Descriptor
 fun Icon3(
     value: K3Descriptor,
     modifier: Modifier = Modifier,
+    elementName: String? = null,
 ) {
     val context = LocalContext.current
     val imeController = LocalImeController.current
@@ -119,6 +121,7 @@ fun Icon3(
             ImeIcons.TextPanel -> context.vectorResource(R.drawable.ic_abc)
             ImeIcons.Noop -> Icons.Default.Close
             ImeIcons.Redo -> Icons.AutoMirrored.Filled.Redo
+            ImeIcons.ShowKeyboard -> Icons.Default.KeyboardDoubleArrowUp // TODO
             ImeIcons.SelectAll -> Icons.Default.SelectAll
             ImeIcons.Settings -> Icons.Default.Settings
             ImeIcons.ToggleActionsOverflow -> Icons.Default.MoreHoriz
@@ -140,8 +143,9 @@ fun Icon3(
 
     if (imageVector != null) {
         SnyggIcon(
-            modifier = modifier,
             imageVector = imageVector,
+            modifier = modifier,
+            elementName = elementName,
         )
     }
 }
