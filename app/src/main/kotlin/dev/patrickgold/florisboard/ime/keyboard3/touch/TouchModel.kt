@@ -19,10 +19,13 @@ package dev.patrickgold.florisboard.ime.keyboard3.touch
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.k3lp.lib.text.K3Descriptor
+import org.k3lp.lib.text.K3String
 import org.k3lp.lib.text.K3StringOrDescriptor
 import org.k3lp.lib.text.asK3String
 import org.k3lp.model.K3Model
@@ -101,6 +104,7 @@ class TouchKey(
     val label: K3StringOrDescriptor,
     val data: K3Key,
     val flick: K3Flick?,
+    val isRepeatable: Boolean,
     val numPointersFocused: MutableStateFlow<Int>,
 )
 
@@ -198,6 +202,7 @@ private fun computeTouchKeyboard(
                     label = computeKeyDisplay(model, key),
                     data = key,
                     flick = key.flickId?.let { model.flicks.byFlickId[it] },
+                    isRepeatable = key.output?.isRepeatable() ?: false,
                     numPointersFocused = MutableStateFlow(0),
                 )
                 touchKeys.add(touchKey)
@@ -227,4 +232,11 @@ private fun computeKeyDisplay(model: K3Model, key: K3Key): K3StringOrDescriptor 
         }
     }
     return key.output ?: key.id.value.asK3String()
+}
+
+fun K3StringOrDescriptor.isRepeatable(): Boolean {
+    return when (this) {
+        is K3String -> false
+        is K3Descriptor -> ImeActions.Repeatable.contains(this)
+    }
 }

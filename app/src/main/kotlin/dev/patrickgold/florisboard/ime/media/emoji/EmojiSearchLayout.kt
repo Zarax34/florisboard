@@ -48,6 +48,7 @@ import dev.patrickgold.florisboard.ime.keyboard3.ImeController
 import dev.patrickgold.florisboard.ime.keyboard3.ImeEditor
 import dev.patrickgold.florisboard.ime.keyboard3.ImeState
 import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
+import dev.patrickgold.florisboard.ime.keyboard3.ui.ImeKeyButton
 import dev.patrickgold.florisboard.ime.keyboard3.ui.ImeKeyboardBox
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.lib.FlorisLocale
@@ -118,63 +119,63 @@ fun EmojiSearchLayout(
         searchResults = emojis.searchByInput(searchQuery.text, 10)
     }
 
-    CompositionLocalProvider(
-        LocalImeController provides inputMethod,
+    SnyggColumn(
+        elementName = FlorisImeUi.Media.elementName,
+        modifier = modifier
+            .fillMaxWidth(),
     ) {
-        SnyggColumn(
-            elementName = FlorisImeUi.Media.elementName,
-            modifier = modifier
+        BasicTextField(
+            modifier = Modifier
                 .fillMaxWidth(),
+            value = editor.value,
+            minLines = 3,
+            maxLines = 3,
+            onValueChange = { newValue ->
+                scope.launch {
+                    inputMethod.updateState {
+                        editor.value = newValue
+                        resetContent(
+                            newSelection = newValue.selection.toK3TextRange(),
+                            newSurrounding = newValue.getSurroundingText(50, 10),
+                        )
+                    }
+                }
+            },
+            keyboardOptions = KeyboardOptions(
+                showKeyboardOnFocus = null,
+            ),
+            textStyle = TextStyle(color = Color.Black),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp),
         ) {
-            BasicTextField(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                value = editor.value,
-                minLines = 3,
-                maxLines = 3,
-                onValueChange = { newValue ->
-                    scope.launch {
-                        inputMethod.updateState {
-                            editor.value = newValue
-                            resetContent(
-                                newSelection = newValue.selection.toK3TextRange(),
-                                newSurrounding = newValue.getSurroundingText(50, 10),
-                            )
-                        }
+            SnyggButton(
+                onClick = {
+                    imeController.updateStateBlocking {
+                        emitDescriptor(ImeActions.ShowTextPanel)
                     }
-                },
-                keyboardOptions = KeyboardOptions(
-                    showKeyboardOnFocus = null,
-                ),
-                textStyle = TextStyle(color = Color.Black),
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp),
+                }
             ) {
-                SnyggButton(
-                    onClick = {
-                        imeController.updateStateBlocking {
-                            emitDescriptor(ImeActions.ShowTextPanel)
-                        }
-                    }
-                ) {
-                    SnyggText(text = "BACK")
-                }
-
-                searchResults.forEach { emoji ->
-                    EmojiText(
-                        modifier = Modifier.clickable {
-                            imeController.updateStateBlocking {
-                                emitText(emoji.value.asK3String())
-                            }
-                        },
-                        text = emoji.value,
-                        emojiCompatInstance = null,
-                    )
-                }
+                SnyggText(text = "BACK")
             }
+            searchResults.forEach { emoji ->
+                EmojiText(
+                    modifier = Modifier.clickable {
+                        imeController.updateStateBlocking {
+                            emitText(emoji.value.asK3String())
+                        }
+                    },
+                    text = emoji.value,
+                    emojiCompatInstance = null,
+                )
+            }
+            ImeKeyButton(
+                output = ImeActions.Backspace,
+            )
+        }
+        CompositionLocalProvider(LocalImeController provides inputMethod) {
             ImeKeyboardBox()
         }
     }

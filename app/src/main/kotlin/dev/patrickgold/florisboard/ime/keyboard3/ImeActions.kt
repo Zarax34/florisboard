@@ -20,7 +20,9 @@ import org.k3lp.lib.text.K3Descriptor
 
 object ImeActions {
     val Backspace = k3Action("backspace")
+    val BackspaceWord = k3Action("backspace_word")
     val Delete = k3Action("delete") // TODO k3lp does not support this yet?
+    val DeleteWord = k3Action("delete_word")
     val Enter = k3Action("enter")
 
     val ArrowDown = flAction("arrow_down")
@@ -66,6 +68,17 @@ object ImeActions {
 
     val NoopDragMarker = flAction("noop_drag_marker")
     val NoopSpacer = flAction("noop_spacer")
+
+    val Repeatable = listOf(
+        ArrowDown,
+        ArrowLeft,
+        ArrowRight,
+        ArrowUp,
+        Backspace,
+        Delete,
+        Undo,
+        Redo,
+    )
 
     private fun flAction(name: String): K3Descriptor {
         return K3Descriptor("fl", "action", name)

@@ -88,22 +88,6 @@ class ImeController(
         }
     }
 
-    fun sendTouchKeyDown(key: K3Key) {
-        //
-    }
-
-    fun sendTouchKeyUp(key: K3Key) {
-        //
-    }
-
-    fun sendTouchKeyCancel(key: K3Key) {
-        //
-    }
-
-    fun sendTouchKeyRepeat(key: K3Key) {
-        //
-    }
-
     fun onHardwareKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (event == null) {
             return false

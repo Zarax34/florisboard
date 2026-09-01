@@ -30,11 +30,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
+import dev.patrickgold.florisboard.ime.keyboard3.interaction.InteractionKind
+import dev.patrickgold.florisboard.ime.keyboard3.interaction.LocalInteractionController
+import dev.patrickgold.florisboard.ime.keyboard3.touch.isRepeatable
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.k3lp.lib.text.K3Descriptor
@@ -50,6 +58,8 @@ fun ImeKeyButton(
     modifier: Modifier = Modifier,
 ) {
     val imeController = LocalImeController.current
+    val interactionController = LocalInteractionController.current
+    val scope = rememberCoroutineScope()
 
     val imeState by imeController.activeState.collectAsState()
     val model by remember { derivedStateOf { imeState.model } }
@@ -58,6 +68,10 @@ fun ImeKeyButton(
             model.displays.byOutput[output]?.display ?: output
         }
     }
+
+    val isRepeatable = output.isRepeatable()
+    val keyRepeatTimeout = interactionController.getKeyRepeatTimeout(output)
+    val keyRepeatDelay = interactionController.getKeyRepeatDelay(output)
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -80,14 +94,34 @@ fun ImeKeyButton(
                     down.consume()
                     val press = PressInteraction.Press(down.position)
                     interactionSource.tryEmit(press)
-                    val up = waitForUpOrCancellation()
-                    if (up != null) {
-                        interactionSource.tryEmit(PressInteraction.Release(press))
-                        imeController.updateStateBlocking {
-                            emit(output)
+                    interactionController.performFeedback(InteractionKind.KeyPress)
+                    var didRepeatTrigger = false
+                    val repeatJob = if (isRepeatable) {
+                        scope.launch {
+                            delay(keyRepeatTimeout)
+                            while (isActive) {
+                                imeController.updateState {
+                                    emit(output)
+                                    didRepeatTrigger = true
+                                }
+                                interactionController.performFeedback(InteractionKind.KeyRepeat)
+                                delay(keyRepeatDelay)
+                            }
                         }
-                    } else {
-                        interactionSource.tryEmit(PressInteraction.Cancel(press))
+                    } else null
+                    val up = waitForUpOrCancellation()
+                    repeatJob?.cancel()
+                    scope.launch {
+                        imeController.updateState {
+                            if (up != null) {
+                                interactionSource.tryEmit(PressInteraction.Release(press))
+                                if (!didRepeatTrigger) {
+                                    emit(output)
+                                }
+                            } else {
+                                interactionSource.tryEmit(PressInteraction.Cancel(press))
+                            }
+                        }
                     }
                 }
             },
@@ -97,6 +131,7 @@ fun ImeKeyButton(
             modifier = Modifier.fillMaxHeight(),
             value = label,
         )
+        LocalHapticFeedback
     }
 }
 

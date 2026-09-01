@@ -60,9 +60,10 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.devtools.DevtoolsOverlay
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardInputLayout
-import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.ProvideKeyboardRowBaseHeight
 import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
+import dev.patrickgold.florisboard.ime.keyboard3.interaction.InteractionKind
+import dev.patrickgold.florisboard.ime.keyboard3.interaction.LocalInteractionController
 import dev.patrickgold.florisboard.ime.media.MediaInputLayout
 import dev.patrickgold.florisboard.ime.sheet.BottomSheetWindow
 import dev.patrickgold.florisboard.ime.text.TextInputLayout
@@ -84,6 +85,7 @@ import org.k3lp.K3lp
 import org.k3lp.K3lpResult
 import org.k3lp.lib.meta.source.SourceFileRef
 import org.k3lp.lib.meta.source.TextSourceFile
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * The main entry point of the IME user interface. This includes the keyboard itself, devtools overlays,
@@ -262,7 +264,7 @@ private fun ImeInnerWindow() {
 
 @Composable
 private fun BoxScope.FloatingDockToFixedIndicator() {
-    val inputFeedbackController = LocalInputFeedbackController.current
+    val interactionController = LocalInteractionController.current
     val windowController = LocalWindowController.current
 
     val windowSpec by windowController.activeWindowSpec.collectAsState()
@@ -292,8 +294,8 @@ private fun BoxScope.FloatingDockToFixedIndicator() {
 
     LaunchedEffect(visible) {
         if (visible) {
-            delay(150)
-            inputFeedbackController.keyPress()
+            delay(150.milliseconds)
+            interactionController.performFeedback(InteractionKind.KeyPress)
         }
     }
 

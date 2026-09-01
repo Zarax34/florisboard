@@ -28,8 +28,6 @@ import dev.patrickgold.florisboard.ime.clipboard.ClipboardSyncBehavior
 import dev.patrickgold.florisboard.ime.core.DisplayLanguageNamesIn
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.input.CapitalizationBehavior
-import dev.patrickgold.florisboard.ime.input.HapticVibrationMode
-import dev.patrickgold.florisboard.ime.input.InputFeedbackActivationMode
 import dev.patrickgold.florisboard.ime.keyboard.IncognitoMode
 import dev.patrickgold.florisboard.ime.keyboard.SpaceBarMode
 import dev.patrickgold.florisboard.ime.landscapeinput.LandscapeInputUiMode
@@ -42,15 +40,12 @@ import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.ExtendedActionsPlacement
 import dev.patrickgold.florisboard.ime.smartbar.IncognitoDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.SmartbarLayout
-import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickAction
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionArrangement
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionJsonConfig
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
-import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyHintConfiguration
 import dev.patrickgold.florisboard.ime.text.key.KeyHintMode
 import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
-import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.ime.theme.extCoreTheme
 import dev.patrickgold.florisboard.ime.window.ImeWindowConfig
@@ -376,10 +371,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "input_feedback__audio_enabled",
             default = true,
         )
-        val audioActivationMode = enum(
-            key = "input_feedback__audio_activation_mode",
-            default = InputFeedbackActivationMode.RESPECT_SYSTEM_SETTINGS,
-        )
         val audioVolume = int(
             key = "input_feedback__audio_volume",
             default = 50,
@@ -408,22 +399,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         val hapticEnabled = boolean(
             key = "input_feedback__haptic_enabled",
             default = true,
-        )
-        val hapticActivationMode = enum(
-            key = "input_feedback__haptic_activation_mode",
-            default = InputFeedbackActivationMode.RESPECT_SYSTEM_SETTINGS,
-        )
-        val hapticVibrationMode = enum(
-            key = "input_feedback__haptic_vibration_mode",
-            default = HapticVibrationMode.USE_VIBRATOR_DIRECTLY,
-        )
-        val hapticVibrationDuration = int(
-            key = "input_feedback__haptic_vibration_duration",
-            default = 50,
-        )
-        val hapticVibrationStrength = int(
-            key = "input_feedback__haptic_vibration_strength",
-            default = 50,
         )
         val hapticFeatKeyPress = boolean(
             key = "input_feedback__haptic_feat_key_press",

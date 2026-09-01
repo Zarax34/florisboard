@@ -29,10 +29,16 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard3.ImeController
 import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
+import dev.patrickgold.florisboard.ime.keyboard3.interaction.InteractionController
+import dev.patrickgold.florisboard.ime.keyboard3.interaction.InteractionKind
+import dev.patrickgold.florisboard.ime.keyboard3.interaction.LocalInteractionController
 import dev.patrickgold.florisboard.ime.keyboard3.touch.TouchKey
 import dev.patrickgold.florisboard.ime.keyboard3.touch.TouchKeyboard
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.k3lp.model.layer.K3LayerId
 import kotlin.math.pow
@@ -47,6 +53,7 @@ data class TrackedPointer(
     val peekLine: PeekLine?,
     val peekMustSwitchBack: Boolean,
     val currKey: TouchKey?,
+    val repeatJob: Job?,
 )
 
 data class PeekLine(
@@ -61,19 +68,21 @@ fun rememberPointerTracker(
     val prefs by FlorisPreferenceStore
     val density = LocalDensity.current
     val imeController = LocalImeController.current
+    val interactionController = LocalInteractionController.current
     val scope = rememberCoroutineScope()
 
     // TODO make configurable
     val peekDistanceSqMin = with(density) { 30.dp.toPx().pow(2) }
 
     return remember(touchKeyboard) {
-        PointerTracker(touchKeyboard, imeController, scope, peekDistanceSqMin)
+        PointerTracker(touchKeyboard, imeController, interactionController, scope, peekDistanceSqMin)
     }
 }
 
 class PointerTracker(
     val touchKeyboard: TouchKeyboard,
     val imeController: ImeController,
+    val interactionController: InteractionController,
     val scope: CoroutineScope,
     val peekDistanceSqMin: Float,
 ) {
@@ -83,6 +92,9 @@ class PointerTracker(
         val downLayerId = imeController.snapshotState().touchLayerId
         val downKey = touchKeyboard.findKey(downLayerId, down.position.normalized(size)) ?: return
         down.consume()
+
+        val keyRepeatTimeout = interactionController.getKeyRepeatTimeout(downKey.data.output)
+        val keyRepeatDelay = interactionController.getKeyRepeatDelay(downKey.data.output)
 
         val trackedPointer = TrackedPointer(
             id = down.id,
@@ -94,16 +106,31 @@ class PointerTracker(
             peekLine = null,
             peekMustSwitchBack = false,
             currKey = downKey,
+            repeatJob = if (downKey.isRepeatable) {
+                scope.launch {
+                    delay(keyRepeatTimeout)
+                    while (isActive) {
+                        imeController.updateState {
+                            downKey.data.output?.let { emit(it) }
+                        }
+                        interactionController.performFeedback(InteractionKind.KeyRepeat)
+                        delay(keyRepeatDelay)
+                    }
+                }
+            } else null
         )
         require(!trackedPointers.contains(trackedPointer.id))
         trackedPointers[trackedPointer.id] = trackedPointer
         if (downKey.data.layerId == null) {
             downKey.numPointersFocused.update { it + 1 }
         }
+        interactionController.performFeedback(InteractionKind.KeyPress)
 
         if (trackedPointer.peekLayerId != null) {
-            imeController.updateStateBlocking {
-                switchTouchLayer(trackedPointer.peekLayerId)
+            scope.launch {
+                imeController.updateState {
+                    switchTouchLayer(trackedPointer.peekLayerId)
+                }
             }
         }
     }
@@ -131,6 +158,7 @@ class PointerTracker(
 
     fun onUp(up: PointerInputChange, size: IntSize) {
         val trackedPointer = trackedPointers[up.id] ?: return
+        trackedPointer.repeatJob?.cancel()
         if (trackedPointer.downKey.data.layerId == null) {
             trackedPointer.downKey.numPointersFocused.update { it - 1 }
         }
@@ -162,6 +190,7 @@ class PointerTracker(
     fun onCancel(id: PointerId) {
         val trackedPointer = trackedPointers[id]
         requireNotNull(trackedPointer)
+        trackedPointer.repeatJob?.cancel()
         trackedPointer.currKey?.numPointersFocused?.update { it - 1 }
         trackedPointer.peekKey?.numPointersFocused?.update { it - 1 }
         if (trackedPointer.peekLayerId != null) {

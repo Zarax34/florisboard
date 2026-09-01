@@ -830,7 +830,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     override fun onInputKeyRepeat(data: KeyData) {
-        FlorisImeService.inputFeedbackController()?.keyRepeatedAction(data)
+        //FlorisImeService.inputFeedbackController()?.keyRepeatedAction(data)
         when (data.code) {
             KeyCode.ARROW_DOWN,
             KeyCode.ARROW_LEFT,

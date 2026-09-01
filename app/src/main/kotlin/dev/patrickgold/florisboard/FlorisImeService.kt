@@ -46,7 +46,6 @@ import dev.patrickgold.florisboard.app.FlorisAppActivity
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
-import dev.patrickgold.florisboard.ime.input.InputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.isFullscreenInputRequired
 import dev.patrickgold.florisboard.ime.keyboard3.ImeEditor
 import dev.patrickgold.florisboard.ime.landscapeinput.ExtractedInputRootView
@@ -96,10 +95,6 @@ class FlorisImeService : LifecycleInputMethodService() {
 
         fun currentInputConnection(): InputConnection? {
             return FlorisImeServiceReference.get()?.currentInputConnection
-        }
-
-        fun inputFeedbackController(): InputFeedbackController? {
-            return FlorisImeServiceReference.get()?.inputFeedbackController
         }
 
         /**
@@ -267,7 +262,6 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     val windowController = ImeWindowController(prefs, lifecycleScope)
 
-    val inputFeedbackController by lazy { InputFeedbackController.new(this) }
     private val systemLocalesFlow = MutableStateFlow(LocaleList())
     var resourcesContext by mutableStateOf(this as Context)
         private set
@@ -417,7 +411,6 @@ class FlorisImeService : LifecycleInputMethodService() {
         super.onWindowShown()
         if (windowController.onWindowShown()) {
             flogInfo(LogTopic.IMS_EVENTS)
-            inputFeedbackController.updateSystemPrefsState()
         } else {
             flogWarning(LogTopic.IMS_EVENTS) { "Ignoring (is already shown)" }
         }

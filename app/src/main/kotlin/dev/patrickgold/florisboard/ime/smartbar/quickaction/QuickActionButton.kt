@@ -34,12 +34,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import dev.patrickgold.compose.tooltip.PlainTooltip
-import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
 import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
+import dev.patrickgold.florisboard.ime.keyboard3.interaction.InteractionKind
+import dev.patrickgold.florisboard.ime.keyboard3.interaction.LocalInteractionController
 import dev.patrickgold.florisboard.ime.keyboard3.ui.Icon3
 import dev.patrickgold.florisboard.ime.keyboard3.ui.rememberDerivedEnabledState
-import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import org.florisboard.lib.snygg.SnyggQueryAttributes
 import org.florisboard.lib.snygg.SnyggSelector
@@ -60,7 +60,7 @@ fun QuickActionButton(
 ) {
     val imeController = LocalImeController.current
     val imeState by imeController.activeState.collectAsState()
-    val inputFeedbackController = LocalInputFeedbackController.current
+    val interactionController = LocalInteractionController.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val descriptor  = remember(action) {
@@ -103,7 +103,7 @@ fun QuickActionButton(
                         down.consume()
                         if (isEnabled && type != QuickActionBarType.EDITOR_TILE) {
                             val press = PressInteraction.Press(down.position)
-                            inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
+                            interactionController.performFeedback(InteractionKind.KeyPress)
                             interactionSource.tryEmit(press)
                             // action.onPointerDown(context)
                             val up = waitForUpOrCancellation()

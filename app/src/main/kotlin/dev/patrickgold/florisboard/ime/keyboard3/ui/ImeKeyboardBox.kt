@@ -128,10 +128,11 @@ fun ImeKeyboardBox(
                             //  mouse leave&re-enter in the emulator => OOB checks
                             val event = awaitPointerEvent()
                             // TODO evaluate this cancellation logic
-                            pointerTracker.trackedPointers.forEach { (id, _) ->
+                            pointerTracker.trackedPointers.toMap().forEach { (id, _) ->
                                 val change = event.changes.fastFirstOrNull { it.id == id }
                                 if (change == null) {
-                                    // TODO does snapshot map not throw ConcurrentModificationException ??
+                                    // we can safely call remove() in onCancel(), as we iterate over the
+                                    // immutable snapshot of the map returned by onMap()
                                     pointerTracker.onCancel(id)
                                 }
                             }
