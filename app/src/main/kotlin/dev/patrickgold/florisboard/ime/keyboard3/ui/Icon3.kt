@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SpaceBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -124,6 +125,7 @@ fun Icon3(
             ImeIcons.ShowKeyboard -> Icons.Default.KeyboardDoubleArrowUp // TODO
             ImeIcons.SelectAll -> Icons.Default.SelectAll
             ImeIcons.Settings -> Icons.Default.Settings
+            ImeIcons.SpaceBar -> Icons.Default.SpaceBar
             ImeIcons.ToggleActionsOverflow -> Icons.Default.MoreHoriz
             ImeIcons.ToggleAutocorrect -> Icons.Default.FontDownload
             ImeIcons.ToggleCompactLayout -> context.vectorResource(R.drawable.ic_accessibility_one_handed)

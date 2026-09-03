@@ -42,6 +42,7 @@ object ImeIcons {
     val SelectAll = flIcon("select_all")
     val Settings = flIcon("settings")
     val ShowKeyboard = flIcon("show_keyboard")
+    val SpaceBar = flIcon("space_bar")
     val ToggleActionsOverflow = flIcon("toggle_actions_overflow")
     val ToggleAutocorrect = flIcon("toggle_autocorrect")
     val ToggleCompactLayout = flIcon("toggle_compact_layout")

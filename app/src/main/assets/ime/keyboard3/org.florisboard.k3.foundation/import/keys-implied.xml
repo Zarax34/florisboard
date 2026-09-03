@@ -32,4 +32,10 @@ All keys may be overridden by keyboard implementations simply by re-declaring th
     <key id="numpad-8" output="8" stretch="true" />
     <key id="numpad-9" output="9" stretch="true" />
     <key id="numpad-0" output="0" stretch="true" />
+    <key id="numpad-comma" output="," stretch="true" />
+    <key id="numpad-period" output="." stretch="true" />
+    <key id="numpad-minus" output="-" stretch="true" />
+    <key id="numpad-space" output=" " stretch="true" />
+    <key id="numpad-bksp" output="@k3:action/backspace" stretch="true" />
+    <key id="numpad-enter" output="@k3:action/enter" stretch="true" />
 </keys>

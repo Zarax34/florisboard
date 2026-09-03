@@ -68,4 +68,6 @@ the mapping to a different display value.
 
     <display output="@fl:action/noop_drag_marker" display="@fl:icon/drag_marker" />
     <display output="@fl:action/noop_spacer" display="@fl:icon/close" />
+
+    <display keyId="numpad-space" display="@fl:icon/space_bar" />
 </displays>
