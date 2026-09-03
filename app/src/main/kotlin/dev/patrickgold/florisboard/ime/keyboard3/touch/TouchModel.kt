@@ -64,7 +64,7 @@ class TouchKeyboard(
     val minDeviceWidthMm: Int,
 ) {
     fun findKey(layerId: K3LayerId, position: Offset): TouchKey? {
-        val layer = layers[layerId]
+        val layer = layers[layerId] ?: layers[K3LayerId.BASE]
         if (layer == null || !NormalizedBounds.contains(position)) {
             return null
         }

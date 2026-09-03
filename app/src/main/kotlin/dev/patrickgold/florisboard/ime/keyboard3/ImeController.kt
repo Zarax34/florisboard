@@ -141,16 +141,16 @@ class ImeController(
             ic: WeakReference<InputConnection>,
             info: FlorisEditorInfo,
         ) {
-            val keyboardMode: KeyboardMode // TODO this should be merged with touchLayerId (& entry mode or smth)
+            val touchLayerId: K3LayerId
             val keyVariation: KeyVariation
             when (info.inputAttributes.type) {
                 InputAttributes.Type.NUMBER -> {
                     keyVariation = KeyVariation.NORMAL
-                    keyboardMode = KeyboardMode.NUMERIC
+                    touchLayerId = LAYER_NUMPAD
                 }
                 InputAttributes.Type.PHONE -> {
                     keyVariation = KeyVariation.NORMAL
-                    keyboardMode = KeyboardMode.PHONE
+                    touchLayerId = LAYER_TELPAD
                 }
                 InputAttributes.Type.TEXT -> {
                     keyVariation = when (info.inputAttributes.variation) {
@@ -172,11 +172,11 @@ class ImeController(
                             KeyVariation.NORMAL
                         }
                     }
-                    keyboardMode = KeyboardMode.CHARACTERS
+                    touchLayerId = LAYER_BASE
                 }
                 else -> {
                     keyVariation = KeyVariation.NORMAL
-                    keyboardMode = KeyboardMode.CHARACTERS
+                    touchLayerId = LAYER_BASE
                 }
             }
             val initialSelection = info.initialSelection2
@@ -188,8 +188,8 @@ class ImeController(
 
             state = state.copy(
                 editor = ImeEditor(ic, info),
+                touchLayerId = touchLayerId,
                 flags = state.flags
-                    .withKeyboardMode(keyboardMode)
                     .withKeyVariation(keyVariation)
                     .withImeUiMode(
                         if (state.flags.imeUiMode != ImeUiMode.CLIPBOARD || prefs.clipboard.historyHideOnNextTextField.get()) {
@@ -208,10 +208,8 @@ class ImeController(
                         }
                     )
                     .withComposingEnabled(
-                        when (keyboardMode) {
-                            KeyboardMode.NUMERIC,
-                            KeyboardMode.PHONE,
-                                -> false
+                        when (touchLayerId) {
+                            LAYER_NUMPAD, LAYER_TELPAD -> false
                             else -> keyVariation != KeyVariation.PASSWORD &&
                                 prefs.suggestion.enabled.get()// &&
                             //!instance.inputAttributes.flagTextAutoComplete &&
@@ -410,6 +408,8 @@ class ImeController(
         private val LAYER_BASE = K3LayerId.BASE
         private val LAYER_SHIFT = K3LayerId("shift")
         private val LAYER_CAPS = K3LayerId("caps")
+        private val LAYER_NUMPAD = K3LayerId("numpad")
+        private val LAYER_TELPAD = K3LayerId("telpad")
 
         private val NEWLINE_SEQ = "\n".asK3String()
     }

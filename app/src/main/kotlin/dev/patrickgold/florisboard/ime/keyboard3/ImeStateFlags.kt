@@ -34,7 +34,6 @@ import dev.patrickgold.florisboard.ime.text.key.KeyVariation
  *
  * <Byte 3> | <Byte 2> | <Byte 1> | <Byte 0> | Description
  * ---------|----------|----------|----------|---------------------------------
- *          |          |          |     1111 | Active [KeyboardMode]
  *          |          |          | 1111     | Active [KeyVariation]
  *          |          |       11 |          | InputShiftState
  *          |          |     1    |          | Is manual selection mode
@@ -64,8 +63,6 @@ import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 @JvmInline
 value class ImeStateFlags(val rawValue: ULong = STATE_ALL_ZERO) {
     companion object {
-        const val M_KEYBOARD_MODE: ULong =                  0x0Fu
-        const val O_KEYBOARD_MODE: Int =                    0
         const val M_KEY_VARIATION: ULong =                  0x0Fu
         const val O_KEY_VARIATION: Int =                    4
         const val M_INPUT_SHIFT_STATE: ULong =              0x03u
@@ -118,11 +115,6 @@ value class ImeStateFlags(val rawValue: ULong = STATE_ALL_ZERO) {
         get() = KeyVariation.fromInt(gettingRegion(M_KEY_VARIATION, O_KEY_VARIATION))
 
     fun withKeyVariation(v: KeyVariation) = settingRegion(M_KEY_VARIATION, O_KEY_VARIATION, v.toInt())
-
-    val keyboardMode: KeyboardMode
-        get() = KeyboardMode.fromInt(gettingRegion(M_KEYBOARD_MODE, O_KEYBOARD_MODE))
-
-    fun withKeyboardMode(v: KeyboardMode) = settingRegion(M_KEYBOARD_MODE, O_KEYBOARD_MODE, v.toInt())
 
     val inputShiftState: InputShiftState
         get() = InputShiftState.fromInt(gettingRegion(M_INPUT_SHIFT_STATE, O_INPUT_SHIFT_STATE))

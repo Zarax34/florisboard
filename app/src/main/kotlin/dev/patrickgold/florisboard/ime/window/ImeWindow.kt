@@ -50,7 +50,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.coerceAtLeast
@@ -68,9 +67,7 @@ import dev.patrickgold.florisboard.ime.media.MediaInputLayout
 import dev.patrickgold.florisboard.ime.sheet.BottomSheetWindow
 import dev.patrickgold.florisboard.ime.text.TextInputLayout
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
-import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import kotlinx.coroutines.delay
-import org.florisboard.lib.android.readText
 import org.florisboard.lib.compose.ProvideActualLayoutDirection
 import org.florisboard.lib.compose.conditional
 import org.florisboard.lib.compose.drawBorder
@@ -81,10 +78,6 @@ import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggIcon
 import org.florisboard.lib.snygg.ui.SnyggIconButton
 import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
-import org.k3lp.K3lp
-import org.k3lp.K3lpResult
-import org.k3lp.lib.meta.source.SourceFileRef
-import org.k3lp.lib.meta.source.TextSourceFile
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -195,7 +188,6 @@ fun BoxScope.ImeWindow() {
 
 @Composable
 private fun ImeInnerWindow() {
-    val context = LocalContext.current
     val imeController = LocalImeController.current
     val windowController = LocalWindowController.current
 
@@ -235,21 +227,6 @@ private fun ImeInnerWindow() {
             },
         allowClip = false,
     ) {
-        // TODO wacky hacky -> move to resource loading logic
-        LaunchedEffect(Unit) {
-            val xml = context.assets
-                .readText("experimental/keyboard/org.florisboard.layouts.de/keyboard/de.xml")
-            val result = K3lp.compile(TextSourceFile(object : SourceFileRef {
-                override fun toString(): String {
-                    return "toString()"
-                }
-            }, xml))
-            flogDebug { result.reports.toString() }
-            require(result is K3lpResult.Success)
-            imeController.updateState {
-                switchModel(result.data)
-            }
-        }
         Column {
             when (activeImeUiMode) {
                 ImeUiMode.TEXT -> TextInputLayout()
