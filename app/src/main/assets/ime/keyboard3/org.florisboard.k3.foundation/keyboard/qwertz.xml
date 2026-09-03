@@ -269,7 +269,7 @@
 
     <layers formId="touch" minDeviceWidth="1">
         <import base="@fl:ext/org.florisboard.k3.foundation" path="layers/numpad.xml" />
-        <!-- TODO <import path="layers/telpad.xml" /> -->
+        <import base="@fl:ext/org.florisboard.k3.foundation" path="layers/telpad.xml" />
 
         <layer id="base">
             <row keys="q w e r t z u i o p" />

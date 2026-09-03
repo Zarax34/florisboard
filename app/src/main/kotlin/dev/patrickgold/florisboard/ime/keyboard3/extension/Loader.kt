@@ -62,7 +62,7 @@ suspend fun loadFoundationKeyboard(context: Context, imeController: ImeControlle
     )
     val result = K3lp.compile(loadAssetFile("keyboard/qwertz.xml"), importResolver, impliedImports)
     for (report in result.reports) {
-        flogError { report.toPrettyString() }
+        flogError { report.cause?.stackTraceToString() ?: "" }
     }
     if (result is K3lpResult.Success) {
         imeController.updateState {

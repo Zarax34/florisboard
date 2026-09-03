@@ -70,4 +70,10 @@ the mapping to a different display value.
     <display output="@fl:action/noop_spacer" display="@fl:icon/close" />
 
     <display keyId="numpad-space" display="@fl:icon/space_bar" />
+
+    <display keyId="telpad-space" display="@fl:icon/space_bar" />
+    <display keyId="telpad-pause" display="Pause" />
+    <display keyId="telpad-to-first" display="123" />
+    <display keyId="telpad-to-second" display="* #" />
+    <display keyId="telpad-wait" display="Wait" />
 </displays>
