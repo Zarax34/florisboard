@@ -24,6 +24,7 @@ import dev.patrickgold.florisboard.ime.nlp.SpellingProvider
 import dev.patrickgold.florisboard.ime.nlp.SpellingResult
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionProvider
+import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -32,48 +33,66 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import org.florisboard.lib.android.readText
 import org.florisboard.lib.kotlin.guardedByLock
+import kotlin.math.abs
+import kotlin.math.min
 
+/**
+ * Default dictionary-backed NLP provider, used by every subtype unless it explicitly requests another provider.
+ * Despite its historic name it is not limited to Latin-script languages: it loads a word-frequency dictionary for
+ * the subtype's primary language (see [DICT_ASSET_BY_LANGUAGE]) and provides both prefix-based word suggestions
+ * and dictionary + edit-distance based spell checking for every language it has a dictionary for. Languages
+ * without a bundled dictionary keep the previous no-op behavior instead of producing bogus results.
+ */
 class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProvider {
     companion object {
         // Default user ID used for all subtypes, unless otherwise specified.
         // See `ime/core/Subtype.kt` Line 210 and 211 for the default usage
         const val ProviderId = "org.florisboard.nlp.providers.latin"
+
+        /** Maps a two-letter subtype language code to the dictionary asset providing suggestions for it. */
+        private val DICT_ASSET_BY_LANGUAGE = mapOf(
+            "en" to "ime/dict/data.json",
+            "ar" to "ime/dict/ar.json",
+        )
+
+        /** Maximum edit distance for a dictionary word to be considered a typo correction candidate. */
+        private const val MAX_SPELLING_EDIT_DISTANCE = 2
     }
 
     private val appContext by context.appContext()
 
-    private val wordData = guardedByLock { mutableMapOf<String, Int>() }
+    private val wordDataByLanguage = guardedByLock { mutableMapOf<String, Map<String, Int>>() }
     private val wordDataSerializer = MapSerializer(String.serializer(), Int.serializer())
 
     override val providerId = ProviderId
 
     override suspend fun create() {
-        // Here we initialize our provider, set up all things which are not language dependent.
+        // Nothing to set up eagerly, dictionaries are loaded lazily per language in preload()/loadDictFor().
     }
 
     override suspend fun preload(subtype: Subtype) = withContext(Dispatchers.IO) {
-        // Here we have the chance to preload dictionaries and prepare a neural network for a specific language.
-        // Is kept in sync with the active keyboard subtype of the user, however a new preload does not necessary mean
-        // the previous language is not needed anymore (e.g. if the user constantly switches between two subtypes)
+        loadDictFor(subtype.primaryLocale.language)
+    }
 
-        // To read a file from the APK assets the following methods can be used:
-        // appContext.assets.open()
-        // appContext.assets.reader()
-        // appContext.assets.bufferedReader()
-        // appContext.assets.readText()
-        // To copy an APK file/dir to the file system cache (appContext.cacheDir), the following methods are available:
-        // appContext.assets.copy()
-        // appContext.assets.copyRecursively()
-
-        // The subtype we get here contains a lot of data, however we are only interested in subtype.primaryLocale and
-        // subtype.secondaryLocales.
-
-        wordData.withLock { wordData ->
-            if (wordData.isEmpty()) {
-                // Here we use readText() because the test dictionary is a json dictionary
-                val rawData = appContext.assets.readText("ime/dict/data.json")
-                val jsonData = Json.decodeFromString(wordDataSerializer, rawData)
-                wordData.putAll(jsonData)
+    /**
+     * Returns the (possibly empty) frequency dictionary for [language], loading and caching it from assets on
+     * first access. An empty map is returned - and cached - for any language without a bundled dictionary asset.
+     */
+    private suspend fun loadDictFor(language: String): Map<String, Int> = withContext(Dispatchers.IO) {
+        wordDataByLanguage.withLock { cache ->
+            cache.getOrPut(language) {
+                val assetPath = DICT_ASSET_BY_LANGUAGE[language]
+                if (assetPath == null) {
+                    emptyMap()
+                } else {
+                    try {
+                        val rawData = appContext.assets.readText(assetPath)
+                        Json.decodeFromString(wordDataSerializer, rawData)
+                    } catch (e: Exception) {
+                        flogDebug { "Failed to load dictionary '$assetPath' for language '$language': $e" }
+                        emptyMap()
+                    }
+                }
             }
         }
     }
@@ -87,14 +106,42 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         allowPossiblyOffensive: Boolean,
         isPrivateSession: Boolean,
     ): SpellingResult {
-        return when (word.lowercase()) {
-            // Use typo for typing errors
-            "typo" -> SpellingResult.typo(arrayOf("typo1", "typo2", "typo3"))
-            // Use grammar error if the algorithm can detect this. On Android 11 and lower grammar errors are visually
-            // marked as typos due to a lack of support
-            "gerror" -> SpellingResult.grammarError(arrayOf("grammar1", "grammar2", "grammar3"))
-            // Use valid word for valid input
-            else -> SpellingResult.validWord()
+        // Kept for manual/debug testing purposes.
+        when (word.lowercase()) {
+            "typo" -> return SpellingResult.typo(arrayOf("typo1", "typo2", "typo3"))
+            "gerror" -> return SpellingResult.grammarError(arrayOf("grammar1", "grammar2", "grammar3"))
+        }
+
+        val dict = loadDictFor(subtype.primaryLocale.language)
+        if (dict.isEmpty() || word.isBlank()) {
+            // No dictionary available for this language (yet) or nothing to check, don't claim anything.
+            return SpellingResult.unspecified()
+        }
+        val normalized = word.lowercase(subtype.primaryLocale.base)
+        if (dict.containsKey(normalized)) {
+            return SpellingResult.validWord()
+        }
+        if (!normalized.all { it.isLetter() }) {
+            // Numbers, URLs, emoji, etc. are not something we can/should spell check.
+            return SpellingResult.validWord()
+        }
+        val candidates = dict.keys.asSequence()
+            .filter { abs(it.length - normalized.length) <= MAX_SPELLING_EDIT_DISTANCE }
+            .mapNotNull { candidate ->
+                val distance = boundedLevenshtein(normalized, candidate, MAX_SPELLING_EDIT_DISTANCE)
+                if (distance <= MAX_SPELLING_EDIT_DISTANCE) candidate to distance else null
+            }
+            .sortedWith(compareBy({ it.second }, { -(dict[it.first] ?: 0) }))
+            .take(maxSuggestionCount)
+            .map { it.first }
+            .toList()
+        return if (candidates.isNotEmpty()) {
+            // Word is unknown but we found close dictionary matches: flag it as a likely typo.
+            SpellingResult.typo(candidates.toTypedArray())
+        } else {
+            // Word is unknown and we have no good correction to offer: don't flag proper nouns/loanwords/rare
+            // words that simply aren't in our (frequency-limited) dictionary as wrong.
+            SpellingResult.unspecified()
         }
     }
 
@@ -105,21 +152,29 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         allowPossiblyOffensive: Boolean,
         isPrivateSession: Boolean,
     ): List<SuggestionCandidate> {
-        return emptyList()
-        /*val word = content.composingText.ifBlank { "next" }
-        val suggestions = buildList {
-            for (n in 0 until maxCandidateCount) {
-                add(WordSuggestionCandidate(
-                    text = "$word$n",
-                    secondaryText = if (n % 2 == 1) "secondary" else null,
-                    confidence = 0.5,
-                    isEligibleForAutoCommit = false,//n == 0 && word.startsWith("auto"),
-                    // We set ourselves as the source provider so we can get notify events for our candidate
-                    sourceProvider = this@LatinLanguageProvider,
-                ))
-            }
+        val query = content.composingText
+        if (query.isBlank()) {
+            return emptyList()
         }
-        return suggestions*/
+        val dict = loadDictFor(subtype.primaryLocale.language)
+        if (dict.isEmpty()) {
+            return emptyList()
+        }
+        val normalizedQuery = query.lowercase(subtype.primaryLocale.base)
+        return dict.entries.asSequence()
+            .filter { it.key.startsWith(normalizedQuery) }
+            .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
+            .take(maxCandidateCount)
+            .map { (word, freq) ->
+                WordSuggestionCandidate(
+                    text = word,
+                    confidence = (freq / 255.0).coerceIn(0.0, 1.0),
+                    // Never auto-commit: we only have frequency data, not enough context to be confident.
+                    isEligibleForAutoCommit = false,
+                    sourceProvider = this,
+                )
+            }
+            .toList()
     }
 
     override suspend fun notifySuggestionAccepted(subtype: Subtype, candidate: SuggestionCandidate) {
@@ -137,15 +192,42 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     }
 
     override suspend fun getListOfWords(subtype: Subtype): List<String> {
-        return wordData.withLock { it.keys.toList() }
+        return loadDictFor(subtype.primaryLocale.language).keys.toList()
     }
 
     override suspend fun getFrequencyForWord(subtype: Subtype, word: String): Double {
-        return wordData.withLock { it.getOrDefault(word, 0) / 255.0 }
+        return loadDictFor(subtype.primaryLocale.language).getOrDefault(word, 0) / 255.0
     }
 
     override suspend fun destroy() {
         // Here we have the chance to de-allocate memory and finish our work. However this might never be called if
         // the app process is killed (which will most likely always be the case).
     }
+}
+
+/**
+ * Computes the Levenshtein (edit) distance between [a] and [b], stopping early and returning [limit] + 1 as soon
+ * as the distance is guaranteed to exceed [limit]. This keeps spell check correction lookups cheap even when
+ * scanning a dictionary with tens of thousands of entries.
+ */
+private fun boundedLevenshtein(a: String, b: String, limit: Int): Int {
+    val n = a.length
+    val m = b.length
+    if (abs(n - m) > limit) return limit + 1
+    var prev = IntArray(m + 1) { it }
+    var curr = IntArray(m + 1)
+    for (i in 1..n) {
+        curr[0] = i
+        var rowMin = curr[0]
+        for (j in 1..m) {
+            val cost = if (a[i - 1] == b[j - 1]) 0 else 1
+            curr[j] = min(min(prev[j] + 1, curr[j - 1] + 1), prev[j - 1] + cost)
+            if (curr[j] < rowMin) rowMin = curr[j]
+        }
+        if (rowMin > limit) return limit + 1
+        val tmp = prev
+        prev = curr
+        curr = tmp
+    }
+    return prev[m]
 }

@@ -319,6 +319,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "gestures__space_bar_long_press",
             default = SwipeAction.SHOW_INPUT_METHOD_PICKER,
         )
+        val spaceBarSwipeLanguageSwitch = boolean(
+            key = "gestures__space_bar_swipe_language_switch",
+            default = false,
+        )
         val deleteKeySwipeLeft = enum(
             key = "gestures__delete_key_swipe_left",
             default = SwipeAction.DELETE_CHARACTERS_PRECISELY,
@@ -547,6 +551,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val spaceBarSwitchesToCharacters = boolean(
             key = "keyboard__space_bar_switches_to_characters",
+            default = true,
+        )
+        val avoidSystemGestureArea = boolean(
+            key = "keyboard__avoid_system_gesture_area",
             default = true,
         )
         val incognitoDisplayMode = enum(

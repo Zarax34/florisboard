@@ -23,12 +23,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.mandatorySystemGestures
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
@@ -57,6 +62,7 @@ import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.roundToIntRect
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.devtools.DevtoolsOverlay
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardInputLayout
@@ -67,6 +73,7 @@ import dev.patrickgold.florisboard.ime.sheet.BottomSheetWindow
 import dev.patrickgold.florisboard.ime.text.TextInputLayout
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.delay
 import org.florisboard.lib.compose.ProvideActualLayoutDirection
 import org.florisboard.lib.compose.conditional
@@ -191,15 +198,28 @@ private fun ImeInnerWindow() {
     val windowController = LocalWindowController.current
 
     val keyboardManager by context.keyboardManager()
+    val prefs by FlorisPreferenceStore
 
     val state by keyboardManager.activeState.collectAsState()
     val windowSpec by windowController.activeWindowSpec.collectAsState()
+    val avoidSystemGestureArea by prefs.keyboard.avoidSystemGestureArea.collectAsState()
 
     ProvideActualLayoutDirection {
         val layoutDirection = LocalLayoutDirection.current
         LaunchedEffect(layoutDirection) {
             keyboardManager.activeState.layoutDirection = layoutDirection
         }
+    }
+
+    // On devices using gesture navigation, the OS reserves a thin strip on the left/right screen edges for the
+    // back gesture which cannot be excluded via `systemGestureExclusion()`. If keys extend into that strip, an
+    // edge-swipe on them (e.g. deleting or a gesture action) can be hijacked by the system as a back navigation.
+    // Insetting the keyboard content by the mandatory (non-excludable) system gesture area keeps every key's
+    // touch target clear of that strip. This resolves to zero on devices using 2/3-button navigation.
+    val gestureAreaModifier = if (avoidSystemGestureArea) {
+        Modifier.padding(WindowInsets.mandatorySystemGestures.only(WindowInsetsSides.Horizontal).asPaddingValues())
+    } else {
+        Modifier
     }
 
     SnyggBox(
@@ -211,6 +231,7 @@ private fun ImeInnerWindow() {
                 Modifier
                     .safeDrawingPadding()
                     .systemGestureExclusion()
+                    .then(gestureAreaModifier)
                     .padding(
                         start = props.paddingLeft.coerceAtLeast(0.dp),
                         end = props.paddingRight.coerceAtLeast(0.dp),
@@ -218,7 +239,7 @@ private fun ImeInnerWindow() {
                     )
             }
             .ifIsInstance<ImeWindowProps.Floating>(windowSpec.props) {
-                Modifier.systemGestureExclusion()
+                Modifier.systemGestureExclusion().then(gestureAreaModifier)
             },
         allowClip = false,
     ) {

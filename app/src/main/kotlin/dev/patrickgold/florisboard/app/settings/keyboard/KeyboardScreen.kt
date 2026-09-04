@@ -120,6 +120,11 @@ fun KeyboardScreen() = FlorisScreen {
                 max = 150,
                 stepIncrement = 5,
             )
+            SwitchPreference(
+                prefs.keyboard.avoidSystemGestureArea,
+                title = stringRes(R.string.pref__keyboard__avoid_system_gesture_area__label),
+                summary = stringRes(R.string.pref__keyboard__avoid_system_gesture_area__summary),
+            )
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__keyboard__group_keypress__label)) {

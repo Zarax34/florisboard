@@ -453,6 +453,8 @@
     <string name="pref__keyboard__group_layout__label" comment="Preference group title">Layout</string>
     <string name="pref__keyboard__landscape_input_ui_mode__label" comment="Preference value">Landscape fullscreen input</string>
     <string name="pref__keyboard__key_spacing__label" comment="Preference title">Key spacing factor</string>
+    <string name="pref__keyboard__avoid_system_gesture_area__label" comment="Preference title">Avoid gesture navigation area</string>
+    <string name="pref__keyboard__avoid_system_gesture_area__summary" comment="Preference summary">Keeps keys clear of the edge strip reserved for the system back gesture, so edge swipes are not accidentally intercepted on gesture-navigation devices</string>
     <string name="pref__keyboard__group_keypress__label" comment="Preference group title">Key press</string>
     <string name="pref__keyboard__popup_enabled__label" comment="Preference title">Popup visibility</string>
     <string name="pref__keyboard__popup_enabled__summary" comment="Preference summary">Show popup when you press a key</string>
@@ -553,6 +555,8 @@
     <string name="pref__gestures__swipe_down__label" comment="Preference title">Swipe down</string>
     <string name="pref__gestures__swipe_left__label" comment="Preference title">Swipe left</string>
     <string name="pref__gestures__swipe_right__label" comment="Preference title">Swipe right</string>
+    <string name="pref__gestures__space_bar_swipe_language_switch__label" comment="Preference title">Switch language by swiping the space bar</string>
+    <string name="pref__gestures__space_bar_swipe_language_switch__summary">Swipe left/right on the space bar to switch to the previous/next enabled keyboard language</string>
     <string name="pref__gestures__space_bar_swipe_up__label" comment="Preference title">Space bar swipe up</string>
     <string name="pref__gestures__space_bar_swipe_left__label" comment="Preference title">Space bar swipe left</string>
     <string name="pref__gestures__space_bar_swipe_right__label" comment="Preference title">Space bar swipe right</string>
