@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.app.settings.theme
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Brightness2
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.ColorLens
@@ -91,6 +92,11 @@ fun ThemeScreen() = FlorisScreen {
             onClick = {
                 navController.navigate(Routes.Settings.ThemeManager(ThemeManagerScreenAction.SELECT_NIGHT))
             },
+        )
+        Preference(
+            icon = Icons.Default.AutoAwesome,
+            title = stringRes(R.string.settings__theme__ai__title),
+            onClick = { navController.navigate(Routes.Settings.AiTheme) },
         )
         LocalTimePickerPreference(
             pref = prefs.theme.sunriseTime,
