@@ -70,7 +70,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         // Nothing to set up eagerly, dictionaries are loaded lazily per language in preload()/loadDictFor().
     }
 
-    override suspend fun preload(subtype: Subtype) = withContext(Dispatchers.IO) {
+    override suspend fun preload(subtype: Subtype) {
         loadDictFor(subtype.primaryLocale.language)
     }
 
