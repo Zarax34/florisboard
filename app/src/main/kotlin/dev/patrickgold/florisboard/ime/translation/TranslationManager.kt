@@ -87,6 +87,12 @@ class TranslationManager(context: Context) {
         }
     }
 
+    /** Returns a short name for [languageCode] in its own language, e.g. "ar" -> "العربية". */
+    fun shortNameFor(languageCode: String): String {
+        val locale = Locale.forLanguageTag(languageCode)
+        return locale.getDisplayLanguage(locale).ifBlank { languageCode }
+    }
+
     fun refreshDownloadedLanguages() {
         scope.launch {
             runCatching {

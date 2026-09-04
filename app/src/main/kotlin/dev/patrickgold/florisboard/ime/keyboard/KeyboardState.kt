@@ -94,6 +94,7 @@ open class KeyboardState protected constructor(open var rawValue: ULong) {
         const val F_IS_RTL_LAYOUT_DIRECTION: ULong =        0x08000000u
 
         const val F_IS_SUBTYPE_SELECTION_VISIBLE: ULong =   0x1_0000_0000u
+        const val F_IS_TRANSLATION_BAR_VISIBLE: ULong =    0x2_0000_0000u
 
         const val F_DEBUG_SHOW_DRAG_AND_DROP_HELPERS =      0x01_00_00_00_00_00_00_00uL
 
@@ -195,6 +196,10 @@ open class KeyboardState protected constructor(open var rawValue: ULong) {
     var isSubtypeSelectionVisible: Boolean
         get() = getFlag(F_IS_SUBTYPE_SELECTION_VISIBLE)
         set(v) { setFlag(F_IS_SUBTYPE_SELECTION_VISIBLE, v) }
+
+    var isTranslationBarVisible: Boolean
+        get() = getFlag(F_IS_TRANSLATION_BAR_VISIBLE)
+        set(v) { setFlag(F_IS_TRANSLATION_BAR_VISIBLE, v) }
 
     var isComposingEnabled: Boolean
         get() = getFlag(F_IS_COMPOSING_ENABLED)

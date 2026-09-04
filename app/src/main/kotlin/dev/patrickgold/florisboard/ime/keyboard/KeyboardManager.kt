@@ -631,10 +631,46 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     /**
-     * Handles a [KeyCode.TRANSLATE] event: translates the current selection - or the whole text of the field
-     * if nothing is selected - into the configured target language and replaces it in place.
+     * Handles a [KeyCode.TRANSLATE] event: opens the translation bar so the user can pick which language to
+     * translate into. The actual translation happens in [translateInto] once a language is picked.
      */
     private fun handleTranslate() {
+        if (activeState.isTranslationBarVisible) {
+            activeState.isTranslationBarVisible = false
+            return
+        }
+        if (translationSourceText().isBlank()) {
+            showToast(R.string.translation__error_nothing_to_translate)
+            return
+        }
+        activeState.isTranslationBarVisible = true
+    }
+
+    /**
+     * Returns the text the translation action would operate on: the current selection, or the whole text of
+     * the field when nothing is selected.
+     */
+    private fun translationSourceText(): String {
+        val content = editorInstance.activeContent
+        return if (content.selection.isSelectionMode) content.selectedText else content.text
+    }
+
+    /** The language the translation action treats as the source, resolving the "follow keyboard" setting. */
+    fun activeTranslationSourceLanguage(): String {
+        val pref = prefs.translation.sourceLanguage.get()
+        return if (pref == TranslationManager.SOURCE_LANGUAGE_SUBTYPE) {
+            subtypeManager.activeSubtype.primaryLocale.language
+        } else {
+            pref
+        }
+    }
+
+    /**
+     * Translates the current selection - or the whole text of the field if nothing is selected - into
+     * [targetLanguage] and replaces it in place. Also remembers [targetLanguage] as the new default target.
+     */
+    fun translateInto(targetLanguage: String) {
+        activeState.isTranslationBarVisible = false
         val content = editorInstance.activeContent
         val hasSelection = content.selection.isSelectionMode
         val text = if (hasSelection) content.selectedText else content.text
@@ -642,20 +678,14 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             showToast(R.string.translation__error_nothing_to_translate)
             return
         }
-        val sourceLanguage = prefs.translation.sourceLanguage.get().let { pref ->
-            if (pref == TranslationManager.SOURCE_LANGUAGE_SUBTYPE) {
-                subtypeManager.activeSubtype.primaryLocale.language
-            } else {
-                pref
-            }
-        }
-        val targetLanguage = prefs.translation.targetLanguage.get()
+        val sourceLanguage = activeTranslationSourceLanguage()
         if (sourceLanguage == targetLanguage) {
             showToast(R.string.translation__error_same_language)
             return
         }
         showToast(R.string.translation__translating)
         scope.launch {
+            prefs.translation.targetLanguage.set(targetLanguage)
             translationManager.translate(text, sourceLanguage, targetLanguage)
                 .onSuccess { translated ->
                     if (translated == text) return@onSuccess

@@ -94,14 +94,28 @@ private val NoAnimationTween = tween<Float>(0)
 @Composable
 fun Smartbar() {
     val prefs by FlorisPreferenceStore
+    val context = LocalContext.current
+    val keyboardManager by context.keyboardManager()
     val smartbarEnabled by prefs.smartbar.enabled.collectAsState()
     val extendedActionsPlacement by prefs.smartbar.extendedActionsPlacement.collectAsState()
+    val state by keyboardManager.activeState.collectAsState()
 
     AnimatedVisibility(
         visible = smartbarEnabled,
         enter = VerticalEnterTransition,
         exit = VerticalExitTransition,
     ) {
+        if (state.isTranslationBarVisible) {
+            SnyggBox(
+                FlorisImeUi.Smartbar.elementName,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(FlorisImeSizing.smartbarHeight),
+            ) {
+                TranslationBar()
+            }
+            return@AnimatedVisibility
+        }
         when (extendedActionsPlacement) {
             ExtendedActionsPlacement.ABOVE_CANDIDATES -> {
                 SnyggColumn(FlorisImeUi.Smartbar.elementName) {
