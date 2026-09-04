@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.keyboard
 
 import android.content.Context
+import android.content.Intent
 import android.icu.lang.UCharacter
 import android.view.KeyEvent
 import android.widget.Toast
@@ -56,6 +57,7 @@ import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboardCache
 import dev.patrickgold.florisboard.ime.translation.TranslationManager
+import dev.patrickgold.florisboard.ime.voice.VoicePermissionActivity
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
@@ -65,6 +67,7 @@ import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.florisboard.translationManager
+import dev.patrickgold.florisboard.voiceInputManager
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
@@ -96,6 +99,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private val nlpManager by context.nlpManager()
     private val subtypeManager by context.subtypeManager()
     private val translationManager by context.translationManager()
+    private val voiceInputManager by context.voiceInputManager()
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     val layoutManager = LayoutManager(context)
@@ -702,6 +706,75 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
     }
 
+    /**
+     * Handles a [KeyCode.VOICE_INPUT] event. Unless the user opted out, dictation runs inside FlorisBoard
+     * itself so the keyboard stays on screen; only as a fallback (or when no recognizer is installed) do we
+     * hand the input session over to a separate voice IME the way we used to.
+     */
+    private fun handleVoiceInput() {
+        if (!prefs.voiceInput.useBuiltInVoiceInput.get() || !voiceInputManager.isAvailable()) {
+            FlorisImeService.switchToVoiceInputMethod()
+            return
+        }
+        if (voiceInputManager.isActive) {
+            voiceInputManager.stop()
+            return
+        }
+        if (!voiceInputManager.hasPermission()) {
+            requestMicrophonePermission()
+            return
+        }
+        startVoiceInput()
+    }
+
+    /** Starts dictation, committing each recognized chunk into the editor as it arrives. */
+    fun startVoiceInput() {
+        activeState.isVoiceInputActive = true
+        voiceInputManager.start(subtypeManager.activeSubtype.primaryLocale.languageTag()) { text ->
+            commitVoiceInputText(text)
+        }
+    }
+
+    /** Stops dictation, keeping whatever has already been recognized. */
+    fun stopVoiceInput() {
+        voiceInputManager.stop()
+    }
+
+    /** Aborts dictation and hides the voice bar. */
+    fun cancelVoiceInput() {
+        voiceInputManager.cancel()
+        activeState.isVoiceInputActive = false
+    }
+
+    private fun commitVoiceInputText(text: String) {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return
+        val needsLeadingSpace = prefs.voiceInput.autoSpace.get() &&
+            editorInstance.activeContent.textBeforeSelection.lastOrNull()?.isWhitespace() == false
+        editorInstance.commitText(if (needsLeadingSpace) " $trimmed" else trimmed)
+    }
+
+    /**
+     * Launches the tiny proxy activity that asks for the microphone permission, since an IME cannot request
+     * runtime permissions on its own.
+     */
+    private fun requestMicrophonePermission() {
+        VoicePermissionActivity.onResult = { isGranted ->
+            if (isGranted) {
+                startVoiceInput()
+            } else {
+                showToast(R.string.voice_input__error_no_permission)
+            }
+        }
+        val intent = Intent(appContext, VoicePermissionActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        runCatching { appContext.startActivity(intent) }.onFailure {
+            VoicePermissionActivity.onResult = null
+            showToast(R.string.voice_input__error_no_permission)
+        }
+    }
+
     private fun showToast(@StringRes id: Int) {
         lastToastReference.get()?.cancel()
         lastToastReference = WeakReference(appContext.showLongToastSync(id))
@@ -835,7 +908,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.IME_UI_MODE_TEXT -> activeState.imeUiMode = ImeUiMode.TEXT
             KeyCode.IME_UI_MODE_MEDIA -> activeState.imeUiMode = ImeUiMode.MEDIA
             KeyCode.IME_UI_MODE_CLIPBOARD -> activeState.imeUiMode = ImeUiMode.CLIPBOARD
-            KeyCode.VOICE_INPUT -> FlorisImeService.switchToVoiceInputMethod()
+            KeyCode.VOICE_INPUT -> handleVoiceInput()
             KeyCode.KANA_SWITCHER -> handleKanaSwitch()
             KeyCode.KANA_HIRA -> handleKanaHira()
             KeyCode.KANA_KATA -> handleKanaKata()

@@ -692,6 +692,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
     }
 
+    val voiceInput = VoiceInput()
+    inner class VoiceInput {
+        val useBuiltInVoiceInput = boolean(
+            key = "voice_input__use_built_in",
+            default = true,
+        )
+        val autoSpace = boolean(
+            key = "voice_input__auto_space",
+            default = true,
+        )
+    }
+
     val spelling = Spelling()
     inner class Spelling {
         val languageMode = enum(

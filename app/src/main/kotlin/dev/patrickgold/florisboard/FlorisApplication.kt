@@ -37,6 +37,7 @@ import dev.patrickgold.florisboard.ime.nlp.NlpManager
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingManager
 import dev.patrickgold.florisboard.ime.theme.ThemeManager
 import dev.patrickgold.florisboard.ime.translation.TranslationManager
+import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.crashutility.CrashUtility
 import dev.patrickgold.florisboard.lib.devtools.Flog
@@ -84,6 +85,7 @@ class FlorisApplication : Application() {
     val subtypeManager = lazy { SubtypeManager(this) }
     val themeManager = lazy { ThemeManager(this) }
     val translationManager = lazy { TranslationManager(this) }
+    val voiceInputManager = lazy { VoiceInputManager(this) }
 
     override fun onCreate() {
         super.onCreate()
@@ -176,3 +178,5 @@ fun Context.subtypeManager() = this.florisApplication().subtypeManager
 fun Context.themeManager() = this.florisApplication().themeManager
 
 fun Context.translationManager() = this.florisApplication().translationManager
+
+fun Context.voiceInputManager() = this.florisApplication().voiceInputManager

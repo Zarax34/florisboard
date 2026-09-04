@@ -8,6 +8,11 @@
     <!-- Permission needed to create notifications on devices running Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- Permission needed for typing by voice directly from the keyboard. Only ever requested when the
+          user actually taps the microphone key, and only used for speech recognition.
+     -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+
     <!-- Android 11+ only: Define that FlorisBoard requests to see all apps that
           ship with an IME or Spell Check service. This is used to guide the user
           in the Settings Ui why FlorisBoard may not be working.
@@ -18,6 +23,9 @@
         </intent>
         <intent>
             <action android:name="android.service.textservice.SpellCheckerService"/>
+        </intent>
+        <intent>
+            <action android:name="android.speech.RecognitionService"/>
         </intent>
     </queries>
 
@@ -129,6 +137,14 @@
                 <data android:mimeType="image/*"/>
             </intent-filter>
         </activity>
+
+        <!-- Microphone permission proxy for keyboard-internal voice typing -->
+        <activity
+            android:name="dev.patrickgold.florisboard.ime.voice.VoicePermissionActivity"
+            android:theme="@style/FlorisAppTheme.Transparent"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:exported="false"/>
 
         <!-- Clipboard Media File Provider -->
         <provider

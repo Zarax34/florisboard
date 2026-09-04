@@ -105,14 +105,18 @@ fun Smartbar() {
         enter = VerticalEnterTransition,
         exit = VerticalExitTransition,
     ) {
-        if (state.isTranslationBarVisible) {
+        if (state.isVoiceInputActive || state.isTranslationBarVisible) {
             SnyggBox(
                 FlorisImeUi.Smartbar.elementName,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(FlorisImeSizing.smartbarHeight),
             ) {
-                TranslationBar()
+                if (state.isVoiceInputActive) {
+                    VoiceInputBar()
+                } else {
+                    TranslationBar()
+                }
             }
             return@AnimatedVisibility
         }

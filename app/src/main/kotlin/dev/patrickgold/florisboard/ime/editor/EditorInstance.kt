@@ -80,6 +80,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         activeState.isActionsOverflowVisible = false
         activeState.isActionsEditorVisible = false
         activeState.isTranslationBarVisible = false
+        keyboardManager.cancelVoiceInput()
         super.handleStartInputView(editorInfo, isRestart)
         val keyboardMode = when (editorInfo.inputAttributes.type) {
             InputAttributes.Type.NUMBER -> {

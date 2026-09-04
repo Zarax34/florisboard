@@ -530,6 +530,21 @@
     <string name="translation__error_nothing_to_translate">There is no text to translate</string>
     <string name="translation__error_same_language">Source and target language are the same</string>
     <string name="translation__error_failed">Translation failed. Check that the language packs are downloaded and try again.</string>
+
+    <!-- Voice input -->
+    <string name="settings__voice_input__title" comment="Title of the Voice input settings screen">Voice typing</string>
+    <string name="settings__voice_input__info">Voice typing uses the speech recognition service installed on your device. Whether recognition happens on-device or in the cloud is up to that service.</string>
+    <string name="pref__voice_input__use_built_in__label" comment="Preference title">Type by voice inside the keyboard</string>
+    <string name="pref__voice_input__use_built_in__summary" comment="Preference summary">Keeps FlorisBoard on screen while dictating instead of switching to another keyboard\'s voice input</string>
+    <string name="pref__voice_input__auto_space__label" comment="Preference title">Insert a space before dictated text</string>
+    <string name="pref__voice_input__auto_space__summary" comment="Preference summary">Adds a space when the text before the cursor does not already end with one</string>
+    <string name="voice_input__listening">Listening\u2026</string>
+    <string name="voice_input__processing">Transcribing\u2026</string>
+    <string name="voice_input__error_not_available">No speech recognition service is installed on this device</string>
+    <string name="voice_input__error_no_permission">Microphone permission is needed for voice typing</string>
+    <string name="voice_input__error_network">Speech recognition needs a network connection right now</string>
+    <string name="voice_input__error_no_speech">Nothing was heard, try again</string>
+    <string name="voice_input__error_failed">Voice typing failed, try again</string>
     <string name="toast__autocorrect_enabled">Autocorrect enabled</string>
     <string name="toast__autocorrect_disabled">Autocorrect disabled</string>
     <string name="settings__dictionary__title" comment="Title of the User dictionaries screen">User dictionaries</string>
