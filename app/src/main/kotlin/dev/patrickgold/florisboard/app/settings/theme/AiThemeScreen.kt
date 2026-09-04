@@ -64,6 +64,9 @@ fun AiThemeScreen() = FlorisScreen {
     content {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
+        // The scope's `prefs` has a @Composable getter, so grab what we need here rather than inside the
+        // coroutine that installs the theme.
+        val themePrefs = prefs.theme
 
         var description by rememberSaveable { mutableStateOf("") }
         var stylesheetJson by rememberSaveable { mutableStateOf("") }
@@ -198,9 +201,9 @@ fun AiThemeScreen() = FlorisScreen {
                                     .onSuccess { componentName ->
                                         errorMessage = null
                                         if (isNightTheme) {
-                                            prefs.theme.nightThemeId.set(componentName)
+                                            themePrefs.nightThemeId.set(componentName)
                                         } else {
-                                            prefs.theme.dayThemeId.set(componentName)
+                                            themePrefs.dayThemeId.set(componentName)
                                         }
                                         Toast.makeText(
                                             context,
