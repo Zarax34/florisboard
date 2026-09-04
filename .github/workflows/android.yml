@@ -38,12 +38,15 @@ jobs:
       - name: Set up CMake and Ninja
         uses: lukka/get-cmake@v4.0.2
       - name: Decode signing keystore
-        # Only runs once a keystore has been provisioned via utils/setup_signing.sh (which uploads this
-        # secret). Without it, the build below stays unsigned, same as before this step existed.
-        if: ${{ secrets.SIGNING_KEYSTORE_BASE64 != '' }}
+        # Only writes a keystore once one has been provisioned via utils/setup_signing.sh (which uploads
+        # this secret). Without it, this is a no-op and the build below stays unsigned as before.
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
         run: |
-          mkdir -p keystore
-          echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 -d > keystore/release.jks
+          if [ -n "$SIGNING_KEYSTORE_BASE64" ]; then
+            mkdir -p keystore
+            echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > keystore/release.jks
+          fi
       - name: Build with Gradle
         env:
           SIGNING_STORE_FILE: keystore/release.jks
