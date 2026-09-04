@@ -93,6 +93,8 @@
     <string name="quick_action__toggle_incognito_mode__tooltip">Toggle incognito mode</string>
     <string name="quick_action__toggle_autocorrect" comment="Please mind the limited available space for the quick action strings">Autocorrect</string>
     <string name="quick_action__toggle_autocorrect__tooltip">Toggle autocorrect</string>
+    <string name="quick_action__translate">Translate</string>
+    <string name="quick_action__translate__tooltip">Translate the text in this field</string>
     <string name="quick_action__voice_input" comment="Please mind the limited available space for the quick action strings">Voice input</string>
     <string name="quick_action__voice_input__tooltip" comment="IME stands for Input Method Editor and is indirectly equivalent to 'keyboard'.">Open voice input provider</string>
     <string name="quick_action__floating_window_mode" comment="Please mind the limited available space for the quick action strings">Floating</string>
@@ -510,6 +512,26 @@
     <string name="pref__spelling__use_udm_entries__label" comment="Label of Use user dictionary entries pref">Use user dictionary entries</string>
     <string name="pref__spelling__use_udm_entries__summary" comment="Summary of Use user dictionary entries pref">Look up entries from the user dictionaries</string>
 
+    <string name="settings__translation__title" comment="Title of the Translation settings screen">Translation</string>
+    <string name="settings__translation__info">Translation runs entirely on your device once the language packs are downloaded. The packs themselves are fetched from Google\'s servers by the ML Kit library and take up around 30 MB each. Nothing is downloaded until you pick a language below.</string>
+    <string name="settings__translation__languages_title" comment="Preference group title">Languages</string>
+    <string name="settings__translation__packs_title" comment="Preference group title">Language packs</string>
+    <string name="settings__translation__packs_description">Download a pack for every language you want to translate from or to. Both the source and the target language need a pack for offline translation to work.</string>
+    <string name="settings__translation__pack_downloaded">Downloaded</string>
+    <string name="settings__translation__pack_not_downloaded">Not downloaded</string>
+    <string name="settings__translation__download_pack" comment="Accessibility label">Download language pack</string>
+    <string name="settings__translation__delete_pack" comment="Accessibility label">Delete language pack</string>
+    <string name="pref__translation__source_language__label" comment="Preference title">Translate from</string>
+    <string name="pref__translation__source_language__keyboard_language">Current keyboard language</string>
+    <string name="pref__translation__target_language__label" comment="Preference title">Translate to</string>
+    <string name="pref__translation__download_over_wifi_only__label" comment="Preference title">Download packs over Wi-Fi only</string>
+    <string name="pref__translation__download_over_wifi_only__summary" comment="Preference summary">Avoids using mobile data for the (fairly large) language pack downloads</string>
+    <string name="translation__translating">Translating\u2026</string>
+    <string name="translation__error_nothing_to_translate">There is no text to translate</string>
+    <string name="translation__error_same_language">Source and target language are the same</string>
+    <string name="translation__error_failed">Translation failed. Check that the language packs are downloaded and try again.</string>
+    <string name="toast__autocorrect_enabled">Autocorrect enabled</string>
+    <string name="toast__autocorrect_disabled">Autocorrect disabled</string>
     <string name="settings__dictionary__title" comment="Title of the User dictionaries screen">User dictionaries</string>
     <string name="pref__dictionary__enable_system_user_dictionary__label" comment="Preference title">Enable system user dictionary</string>
     <string name="pref__dictionary__enable_system_user_dictionary__summary" comment="Preference summary">Suggest words stored in the system user dictionary</string>

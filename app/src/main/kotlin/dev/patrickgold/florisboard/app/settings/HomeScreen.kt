@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.material.icons.filled.SmartButton
 import androidx.compose.material.icons.filled.Spellcheck
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Keyboard
@@ -134,6 +135,11 @@ fun HomeScreen() = FlorisScreen {
             icon = Icons.Default.Gesture,
             title = stringRes(R.string.settings__gestures__title),
             onClick = { navController.navigate(Routes.Settings.Gestures) },
+        )
+        Preference(
+            icon = Icons.Default.Translate,
+            title = stringRes(R.string.settings__translation__title),
+            onClick = { navController.navigate(Routes.Settings.Translation) },
         )
         Preference(
             icon = Icons.AutoMirrored.Outlined.Assignment,

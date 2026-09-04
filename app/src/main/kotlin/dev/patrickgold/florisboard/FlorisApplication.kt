@@ -36,6 +36,7 @@ import dev.patrickgold.florisboard.ime.media.emoji.FlorisEmojiCompat
 import dev.patrickgold.florisboard.ime.nlp.NlpManager
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingManager
 import dev.patrickgold.florisboard.ime.theme.ThemeManager
+import dev.patrickgold.florisboard.ime.translation.TranslationManager
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.crashutility.CrashUtility
 import dev.patrickgold.florisboard.lib.devtools.Flog
@@ -82,6 +83,7 @@ class FlorisApplication : Application() {
     val nlpManager = lazy { NlpManager(this) }
     val subtypeManager = lazy { SubtypeManager(this) }
     val themeManager = lazy { ThemeManager(this) }
+    val translationManager = lazy { TranslationManager(this) }
 
     override fun onCreate() {
         super.onCreate()
@@ -172,3 +174,5 @@ fun Context.nlpManager() = this.florisApplication().nlpManager
 fun Context.subtypeManager() = this.florisApplication().subtypeManager
 
 fun Context.themeManager() = this.florisApplication().themeManager
+
+fun Context.translationManager() = this.florisApplication().translationManager

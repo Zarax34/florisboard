@@ -53,6 +53,7 @@ import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.ime.theme.extCoreTheme
+import dev.patrickgold.florisboard.ime.translation.TranslationManager
 import dev.patrickgold.florisboard.ime.window.ImeWindowConfig
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.lib.util.VersionName
@@ -672,6 +673,22 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         val extendedActionsPlacement = enum(
             key = "smartbar__extended_actions_placement",
             default = ExtendedActionsPlacement.ABOVE_CANDIDATES,
+        )
+    }
+
+    val translation = Translation()
+    inner class Translation {
+        val sourceLanguage = string(
+            key = "translation__source_language",
+            default = TranslationManager.SOURCE_LANGUAGE_SUBTYPE,
+        )
+        val targetLanguage = string(
+            key = "translation__target_language",
+            default = "en",
+        )
+        val downloadOverWifiOnly = boolean(
+            key = "translation__download_over_wifi_only",
+            default = false,
         )
     }
 

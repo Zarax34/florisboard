@@ -20,6 +20,7 @@ import android.content.Context
 import android.icu.lang.UCharacter
 import android.view.KeyEvent
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
@@ -54,6 +55,7 @@ import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboardCache
+import dev.patrickgold.florisboard.ime.translation.TranslationManager
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
@@ -62,6 +64,7 @@ import dev.patrickgold.florisboard.lib.uppercase
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
+import dev.patrickgold.florisboard.translationManager
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
@@ -73,6 +76,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.AndroidKeyguardManager
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.android.showLongToastSync
@@ -91,6 +95,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private val extensionManager by context.extensionManager()
     private val nlpManager by context.nlpManager()
     private val subtypeManager by context.subtypeManager()
+    private val translationManager by context.translationManager()
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     val layoutManager = LayoutManager(context)
@@ -618,10 +623,58 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * Handles a [KeyCode.TOGGLE_AUTOCORRECT] event.
      */
     private fun handleToggleAutocorrect() {
-        lastToastReference.get()?.cancel()
-        lastToastReference = WeakReference(
-            appContext.showLongToastSync("Autocorrect toggle is a placeholder and not yet implemented")
+        val isEnabled = !prefs.correction.autoCorrectEnabled.get()
+        prefs.correction.autoCorrectEnabled.set(isEnabled)
+        showToast(
+            if (isEnabled) R.string.toast__autocorrect_enabled else R.string.toast__autocorrect_disabled
         )
+    }
+
+    /**
+     * Handles a [KeyCode.TRANSLATE] event: translates the current selection - or the whole text of the field
+     * if nothing is selected - into the configured target language and replaces it in place.
+     */
+    private fun handleTranslate() {
+        val content = editorInstance.activeContent
+        val hasSelection = content.selection.isSelectionMode
+        val text = if (hasSelection) content.selectedText else content.text
+        if (text.isBlank()) {
+            showToast(R.string.translation__error_nothing_to_translate)
+            return
+        }
+        val sourceLanguage = prefs.translation.sourceLanguage.get().let { pref ->
+            if (pref == TranslationManager.SOURCE_LANGUAGE_SUBTYPE) {
+                subtypeManager.activeSubtype.primaryLocale.language
+            } else {
+                pref
+            }
+        }
+        val targetLanguage = prefs.translation.targetLanguage.get()
+        if (sourceLanguage == targetLanguage) {
+            showToast(R.string.translation__error_same_language)
+            return
+        }
+        showToast(R.string.translation__translating)
+        scope.launch {
+            translationManager.translate(text, sourceLanguage, targetLanguage)
+                .onSuccess { translated ->
+                    if (translated == text) return@onSuccess
+                    withContext(Dispatchers.Main) {
+                        if (!hasSelection) {
+                            editorInstance.performClipboardSelectAll()
+                        }
+                        editorInstance.commitText(translated)
+                    }
+                }
+                .onFailure {
+                    showToast(R.string.translation__error_failed)
+                }
+        }
+    }
+
+    private fun showToast(@StringRes id: Int) {
+        lastToastReference.get()?.cancel()
+        lastToastReference = WeakReference(appContext.showLongToastSync(id))
     }
 
     /**
@@ -779,6 +832,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             }
             KeyCode.TOGGLE_INCOGNITO_MODE -> scope.launch { handleToggleIncognitoMode() }
             KeyCode.TOGGLE_AUTOCORRECT -> handleToggleAutocorrect()
+            KeyCode.TRANSLATE -> handleTranslate()
             KeyCode.UNDO -> editorInstance.performUndo()
             KeyCode.VIEW_CHARACTERS -> activeState.keyboardMode = KeyboardMode.CHARACTERS
             KeyCode.VIEW_NUMERIC -> activeState.keyboardMode = KeyboardMode.NUMERIC
