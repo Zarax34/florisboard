@@ -630,6 +630,11 @@ private class TextKeyboardLayoutController(
                     onTouchCancelInternal(event, pointer)
                     onTouchDownInternal(event, pointer)
                 }
+            } else if (initialKey.computedData.code == KeyCode.SPACE || initialKey.computedData.code == KeyCode.CJK_SPACE) {
+                // The space bar doubles as a swipe-gesture surface (cursor move / language switch). Keep it as the
+                // pressed/active key for the whole gesture instead of hopping onto whichever key the finger
+                // currently hovers over, which would otherwise flicker-press neighboring keys mid-swipe before the
+                // swipe gesture is recognized (see SwipeGesture.Detector's distance/velocity thresholds).
             } else {
                 if ((event.getX(pointer.index) < activeKey.visibleBounds.left - 0.1f * activeKey.visibleBounds.width)
                     || (event.getX(pointer.index) > activeKey.visibleBounds.right + 0.1f * activeKey.visibleBounds.width)

@@ -64,8 +64,9 @@ fun TypingScreen() = FlorisScreen {
         FlorisErrorCard(
             modifier = Modifier.padding(8.dp),
             text = """
-                Suggestions (except system autofill) and spell checking are not available in this release. All
-                preferences in the "Corrections" group are properly implemented though.
+                Suggestions and spell checking currently have a bundled dictionary for English and Arabic only;
+                other languages will not show word suggestions or spell-check corrections yet. All preferences in
+                the "Corrections" group are properly implemented for every language though.
             """.trimIndent().replace('\n', ' '),
         )
 
@@ -96,6 +97,12 @@ fun TypingScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__correction__title)) {
+            SwitchPreference(
+                prefs.correction.autoCorrectEnabled,
+                title = stringRes(R.string.pref__correction__auto_correct_enabled__label),
+                summary = stringRes(R.string.pref__correction__auto_correct_enabled__summary),
+                enabledIf = { prefs.suggestion.enabled isEqualTo true },
+            )
             SwitchPreference(
                 prefs.correction.autoCapitalization,
                 title = stringRes(R.string.pref__correction__auto_capitalization__label),

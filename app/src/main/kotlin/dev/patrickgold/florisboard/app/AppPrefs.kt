@@ -162,6 +162,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "correction__auto_capitalization",
             default = true,
         )
+        val autoCorrectEnabled = boolean(
+            key = "correction__auto_correct_enabled",
+            default = true,
+        )
         val autoSpacePunctuation = boolean(
             key = "correction__auto_space_punctuation",
             default = false,

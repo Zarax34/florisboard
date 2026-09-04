@@ -489,6 +489,8 @@
     <string name="pref__suggestion__api30_inline_suggestions_enabled__summary" comment="Preference summary">Show inline suggestions provided by autofill services</string>
     <string name="pref__suggestion__incognito_mode__label" comment="Label of Incognito mode preference in Typing">Incognito mode</string>
     <string name="pref__correction__title" comment="Preference group title">Corrections</string>
+    <string name="pref__correction__auto_correct_enabled__label" comment="Preference title">Auto-correct</string>
+    <string name="pref__correction__auto_correct_enabled__summary" comment="Preference summary">Automatically correct a word to its most likely spelling when it is unambiguous, right after you finish typing it</string>
     <string name="pref__correction__auto_capitalization__label" comment="Preference title">Auto-capitalization</string>
     <string name="pref__correction__auto_capitalization__summary" comment="Preference summary">Capitalize words based on the current input context</string>
     <string name="pref__correction__auto_space_punctuation__label" comment="Preference title">Auto-space after punctuation</string>
@@ -515,6 +517,10 @@
     <string name="pref__dictionary__enable_internal_user_dictionary__summary" comment="Preference summary">Suggest words stored in the internal user dictionary</string>
     <string name="pref__dictionary__manage_floris_user_dictionary__label" comment="Preference title">Manage internal user dictionary</string>
     <string name="pref__dictionary__manage_floris_user_dictionary__summary" comment="Preference summary">Add, view, and remove entries for the internal user dictionary</string>
+    <string name="pref__dictionary__group_learned_data__label" comment="Preference group title">Learned typing data</string>
+    <string name="pref__dictionary__clear_learned_data__label" comment="Preference title">Clear learned word predictions</string>
+    <string name="pref__dictionary__clear_learned_data__summary" comment="Preference summary">Forgets the word pairs learned from your typing that power next-word predictions</string>
+    <string name="pref__dictionary__clear_learned_data__dialog_message">This deletes the on-device data used to predict your next word based on your typing history. Your dictionaries and manually added user dictionary entries are not affected. This action cannot be undone.</string>
     <string name="settings__udm__title_floris" comment="Title of the User Dictionary Manager activity for internal">Internal user dictionary</string>
     <string name="settings__udm__title_system" comment="Title of the User Dictionary Manager activity for system">System user dictionary</string>
     <string name="settings__udm__no_words_in_dictionary" comment="String to show if no words are present in the dictionary">This user dictionary does not contain any words.</string>
