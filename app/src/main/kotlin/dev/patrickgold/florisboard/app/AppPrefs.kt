@@ -561,6 +561,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "keyboard__avoid_system_gesture_area",
             default = true,
         )
+        val blockSystemGestures = boolean(
+            key = "keyboard__block_system_gestures",
+            default = false,
+        )
         val incognitoDisplayMode = enum(
             key = "keyboard__incognito_indicator",
             default = IncognitoDisplayMode.DISPLAY_BEHIND_KEYBOARD,
@@ -653,10 +657,9 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "smartbar__shared_actions_expanded",
             default = false,
         )
-        @Deprecated("Always enabled due to UX issues")
         val sharedActionsAutoExpandCollapse = boolean(
             key = "smartbar__shared_actions_auto_expand_collapse",
-            default = true,
+            default = false,
         )
         val sharedActionsExpandWithAnimation = boolean(
             key = "smartbar__shared_actions_expand_with_animation",

@@ -455,6 +455,8 @@
     <string name="pref__keyboard__key_spacing__label" comment="Preference title">Key spacing factor</string>
     <string name="pref__keyboard__avoid_system_gesture_area__label" comment="Preference title">Avoid gesture navigation area</string>
     <string name="pref__keyboard__avoid_system_gesture_area__summary" comment="Preference summary">Keeps keys clear of the edge strip reserved for the system back gesture, so edge swipes are not accidentally intercepted on gesture-navigation devices</string>
+    <string name="pref__keyboard__block_system_gestures__label" comment="Preference title">Block system gestures over the keyboard</string>
+    <string name="pref__keyboard__block_system_gestures__summary" comment="Preference summary">Reserves the whole keyboard area for typing. Turning this on stops the system back/navigation gesture from working while the keyboard is open</string>
     <string name="pref__keyboard__group_keypress__label" comment="Preference group title">Key press</string>
     <string name="pref__keyboard__popup_enabled__label" comment="Preference title">Popup visibility</string>
     <string name="pref__keyboard__popup_enabled__summary" comment="Preference summary">Show popup when you press a key</string>
@@ -490,7 +492,7 @@
     <string name="pref__suggestion__incognito_mode__label" comment="Label of Incognito mode preference in Typing">Incognito mode</string>
     <string name="pref__correction__title" comment="Preference group title">Corrections</string>
     <string name="pref__correction__auto_correct_enabled__label" comment="Preference title">Auto-correct</string>
-    <string name="pref__correction__auto_correct_enabled__summary" comment="Preference summary">Automatically correct a word to its most likely spelling when it is unambiguous, right after you finish typing it</string>
+    <string name="pref__correction__auto_correct_enabled__summary" comment="Preference summary">Automatically correct a word to its most likely spelling when it is unambiguous, right after you finish typing it. Press backspace to undo a correction. Requires suggestions to be enabled above</string>
     <string name="pref__correction__auto_capitalization__label" comment="Preference title">Auto-capitalization</string>
     <string name="pref__correction__auto_capitalization__summary" comment="Preference summary">Capitalize words based on the current input context</string>
     <string name="pref__correction__auto_space_punctuation__label" comment="Preference title">Auto-space after punctuation</string>

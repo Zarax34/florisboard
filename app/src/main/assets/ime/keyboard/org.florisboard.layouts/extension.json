@@ -25,6 +25,20 @@
         "modifier": "org.florisboard.layouts:arabic"
       },
       {
+        "id": "arabic_pc",
+        "label": "Arabic (PC)",
+        "authors": [ "zarax34" ],
+        "direction": "rtl",
+        "modifier": "org.florisboard.layouts:arabic"
+      },
+      {
+        "id": "arabic_rtl",
+        "label": "Arabic (Right-to-left order)",
+        "authors": [ "zarax34" ],
+        "direction": "rtl",
+        "modifier": "org.florisboard.layouts:arabic"
+      },
+      {
         "id": "armenian_alt_phonetic",
         "label": "Armenian Alt Phonetic",
         "authors": [ "MikayelB" ],

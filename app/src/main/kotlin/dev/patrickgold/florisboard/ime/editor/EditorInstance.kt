@@ -62,6 +62,15 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     val phantomSpace = PhantomSpaceState()
     val massSelection = MassSelectionState()
 
+    /**
+     * The word an auto-correction silently replaced, together with the correction that took its place. Kept
+     * around only for as long as a single backspace should undo that correction (see [revertAutoCorrection]),
+     * which is until the user types another letter or moves the cursor. Deliberately not part of
+     * [PhantomSpaceState], whose lifecycle ends as soon as the separator that triggered the correction is
+     * committed.
+     */
+    private var pendingAutoCorrection: Pair<String, String>? = null
+
     private fun currentInputConnection() = FlorisImeService.currentInputConnection()
 
     override fun handleStartInputView(editorInfo: FlorisEditorInfo, isRestart: Boolean) {
@@ -162,6 +171,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     fun setSelection(start: Int, end: Int): Boolean {
         autoSpace.setInactive()
         phantomSpace.setInactive()
+        pendingAutoCorrection = null
         val selection = EditorRange.normalized(start, end)
         return super.setSelection(selection)
     }
@@ -197,6 +207,11 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     }
 
     override fun commitChar(char: String): Boolean {
+        // The separator that triggered an auto-correction still gets to pass through, so backspace right after
+        // it can still undo the correction. Typing an actual character means the user moved on.
+        if (char.isNotEmpty() && char.all { it.isLetter() }) {
+            pendingAutoCorrection = null
+        }
         val isInsertAutoSpaceBeforeChar = shouldInsertAutoSpaceBefore(char)
         val isInsertAutoSpaceAfterChar = shouldInsertAutoSpaceAfter(char)
         val isDeletePreviousSpace = isInsertAutoSpaceAfterChar && autoSpace.isActive
@@ -249,11 +264,16 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
      *
      * @return True on success, false if an error occurred or the input connection is invalid.
      */
-    fun commitCompletion(candidate: SuggestionCandidate): Boolean {
+    fun commitCompletion(candidate: SuggestionCandidate, isAutoCorrection: Boolean = false): Boolean {
         val text = candidate.text.toString()
         if (text.isEmpty() || activeInfo.isRawInputEditor) return false
         val content = activeContent
         return if (content.composing.isValid) {
+            // Only an auto-correction is revertible: the user did not ask for this replacement, so a backspace
+            // right afterwards should put their original word back instead of deleting a character.
+            pendingAutoCorrection = content.composingText
+                .takeIf { isAutoCorrection && it.isNotEmpty() && it != text }
+                ?.let { text to it }
             phantomSpace.setActive(showComposingRegion = false, candidate = candidate)
             super.finalizeComposingText(text)
         } else {
@@ -268,6 +288,38 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
                 updateLastCommitPosition()
             }
         }
+    }
+
+    /**
+     * Undoes the last silent auto-correction by putting the word the user originally typed back into the
+     * editor, keeping any separator that was typed after it. Called when the user presses backspace right
+     * after a word was auto-corrected.
+     *
+     * @return True if an auto-correction was reverted, false if there was nothing to revert (in which case
+     *  the caller should perform a regular delete instead).
+     */
+    fun revertAutoCorrection(): Boolean {
+        val (corrected, original) = pendingAutoCorrection ?: return false
+        if (corrected.isEmpty() || original.isEmpty() || activeInfo.isRawInputEditor) return false
+        val content = activeContent
+        val selection = content.selection
+        if (!selection.isValid || selection.isSelectionMode) return false
+        val textBefore = content.textBeforeSelection
+        // The correction is either still the last thing in the editor, or is already followed by the single
+        // separator (space/punctuation) whose input triggered the auto-commit in the first place.
+        val trailing = when {
+            textBefore.endsWith(corrected) -> ""
+            textBefore.length > corrected.length && textBefore.dropLast(1).endsWith(corrected) -> {
+                textBefore.takeLast(1)
+            }
+            else -> return false
+        }
+        val start = selection.start - (corrected.length + trailing.length)
+        if (start < 0) return false
+        // Selecting the corrected word lets the commit below replace it. setSelection() also clears both the
+        // phantom space and the pending correction, so this cannot re-trigger itself or add a stray space.
+        setSelection(start, selection.end)
+        return commitText(original + trailing)
     }
 
     /**

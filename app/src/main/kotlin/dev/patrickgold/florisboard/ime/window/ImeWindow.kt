@@ -203,6 +203,7 @@ private fun ImeInnerWindow() {
     val state by keyboardManager.activeState.collectAsState()
     val windowSpec by windowController.activeWindowSpec.collectAsState()
     val avoidSystemGestureArea by prefs.keyboard.avoidSystemGestureArea.collectAsState()
+    val blockSystemGestures by prefs.keyboard.blockSystemGestures.collectAsState()
 
     ProvideActualLayoutDirection {
         val layoutDirection = LocalLayoutDirection.current
@@ -212,12 +213,20 @@ private fun ImeInnerWindow() {
     }
 
     // On devices using gesture navigation, the OS reserves a thin strip on the left/right screen edges for the
-    // back gesture which cannot be excluded via `systemGestureExclusion()`. If keys extend into that strip, an
-    // edge-swipe on them (e.g. deleting or a gesture action) can be hijacked by the system as a back navigation.
-    // Insetting the keyboard content by the mandatory (non-excludable) system gesture area keeps every key's
-    // touch target clear of that strip. This resolves to zero on devices using 2/3-button navigation.
+    // back gesture. Insetting the keyboard content by that (non-excludable) area keeps every key's touch target
+    // clear of the strip, so an edge swipe reaches the system instead of typing the outermost key. This resolves
+    // to zero on devices using 2/3-button navigation.
     val gestureAreaModifier = if (avoidSystemGestureArea) {
         Modifier.padding(WindowInsets.mandatorySystemGestures.only(WindowInsetsSides.Horizontal).asPaddingValues())
+    } else {
+        Modifier
+    }
+
+    // Claiming the whole IME area via `systemGestureExclusion()` stops the system's edge-swipe navigation from
+    // working over the keyboard - the keyboard receives those touches and types instead. Users who navigate by
+    // gestures generally want the opposite, so this is opt-in.
+    val gestureExclusionModifier = if (blockSystemGestures) {
+        Modifier.systemGestureExclusion()
     } else {
         Modifier
     }
@@ -230,7 +239,7 @@ private fun ImeInnerWindow() {
             .ifIsInstance<ImeWindowProps.Fixed>(windowSpec.props) { props ->
                 Modifier
                     .safeDrawingPadding()
-                    .systemGestureExclusion()
+                    .then(gestureExclusionModifier)
                     .then(gestureAreaModifier)
                     .padding(
                         start = props.paddingLeft.coerceAtLeast(0.dp),
@@ -239,7 +248,7 @@ private fun ImeInnerWindow() {
                     )
             }
             .ifIsInstance<ImeWindowProps.Floating>(windowSpec.props) {
-                Modifier.systemGestureExclusion().then(gestureAreaModifier)
+                Modifier.then(gestureExclusionModifier).then(gestureAreaModifier)
             },
         allowClip = false,
     ) {
