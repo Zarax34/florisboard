@@ -262,33 +262,33 @@ internal fun rememberAnimatedStyle(style: SnyggSinglePropertySet): SnyggSinglePr
     for (property in AnimatableColorProperties) {
         val value = style.properties[property]
         if (value is SnyggStaticColorValue) {
-            val color by animateColorAsState(
+            val color = animateColorAsState(
                 targetValue = value.color,
                 animationSpec = tween(durationMillis),
                 label = property,
             )
-            properties[property] = SnyggStaticColorValue(color)
+            properties[property] = SnyggStaticColorValue(color.value)
         }
     }
     for (property in AnimatableDpProperties) {
         val value = style.properties[property]
         if (value is SnyggDpSizeValue) {
-            val size by animateDpAsState(
+            val size = animateDpAsState(
                 targetValue = value.dp,
                 animationSpec = tween(durationMillis),
                 label = property,
             )
-            properties[property] = SnyggDpSizeValue(size)
+            properties[property] = SnyggDpSizeValue(size.value)
         }
     }
     val scaleValue = style.properties[Snygg.Scale]
     if (scaleValue is SnyggScaleValue) {
-        val scale by animateFloatAsState(
+        val scale = animateFloatAsState(
             targetValue = scaleValue.scale,
             animationSpec = tween(durationMillis),
             label = Snygg.Scale,
         )
-        properties[Snygg.Scale] = SnyggScaleValue(scale)
+        properties[Snygg.Scale] = SnyggScaleValue(scale.value)
     }
     return remember(properties) { SnyggSinglePropertySet(properties) }
 }
