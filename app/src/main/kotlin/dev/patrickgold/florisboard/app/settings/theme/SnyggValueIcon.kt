@@ -29,6 +29,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FormatAlignLeft
 import androidx.compose.material.icons.automirrored.filled.FormatAlignRight
 import androidx.compose.material.icons.automirrored.filled.WrapText
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.FontDownload
@@ -73,7 +75,9 @@ import org.florisboard.lib.snygg.value.SnyggFontStyleValue
 import org.florisboard.lib.snygg.value.SnyggFontWeightValue
 import org.florisboard.lib.snygg.value.SnyggGenericFontFamilyValue
 import org.florisboard.lib.snygg.value.SnyggNoValue
+import org.florisboard.lib.snygg.value.SnyggMsDurationValue
 import org.florisboard.lib.snygg.value.SnyggPaddingValue
+import org.florisboard.lib.snygg.value.SnyggScaleValue
 import org.florisboard.lib.snygg.value.SnyggRoundedCornerDpShapeValue
 import org.florisboard.lib.snygg.value.SnyggShapeValue
 import org.florisboard.lib.snygg.value.SnyggSpSizeValue
@@ -282,6 +286,22 @@ internal fun SnyggValueIcon(
             Icon(
                 modifier = modifier.requiredSize(spec.iconSize),
                 imageVector = Icons.Default.CheckBoxOutlineBlank,
+                contentDescription = null,
+            )
+        }
+
+        is SnyggScaleValue -> {
+            Icon(
+                modifier = modifier.requiredSize(spec.iconSize),
+                imageVector = Icons.Default.ZoomOutMap,
+                contentDescription = null,
+            )
+        }
+
+        is SnyggMsDurationValue -> {
+            Icon(
+                modifier = modifier.requiredSize(spec.iconSize),
+                imageVector = Icons.Default.Timer,
                 contentDescription = null,
             )
         }

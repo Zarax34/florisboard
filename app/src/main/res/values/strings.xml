@@ -364,6 +364,8 @@
     <string name="snygg__property_name__shadow_elevation">Shadow elevation</string>
     <string name="snygg__property_name__shape">Shape</string>
     <string name="snygg__property_name__clip">Clip</string>
+    <string name="snygg__property_name__scale">Scale</string>
+    <string name="snygg__property_name__transition_duration">Transition duration</string>
     <string name="snygg__property_name__src">Source</string>
     <string name="snygg__property_name__text_align">Text align</string>
     <string name="snygg__property_name__text_decoration_line">Text decoration line</string>

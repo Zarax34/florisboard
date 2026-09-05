@@ -172,6 +172,14 @@
       "type": "string",
       "const": "no"
     },
+    "snygg-scale-value": {
+      "type": "string",
+      "pattern": "^\\s*(?<factor>(?:0|[1-9][0-9]*)(?:[.][0-9]*)?|[.][0-9]+)\\s*$"
+    },
+    "snygg-ms-duration-value": {
+      "type": "string",
+      "pattern": "^\\s*(?<duration>0|[1-9][0-9]*)ms\\s*$"
+    },
     "snygg-text-align-value": {
       "type": "string",
       "enum": [
@@ -621,6 +629,32 @@
             },
             {
               "$ref": "#/$defs/snygg-no-value"
+            }
+          ]
+        },
+        "scale": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/snygg-inherit-value"
+            },
+            {
+              "$ref": "#/$defs/snygg-defined-var-value"
+            },
+            {
+              "$ref": "#/$defs/snygg-scale-value"
+            }
+          ]
+        },
+        "transition-duration": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/snygg-inherit-value"
+            },
+            {
+              "$ref": "#/$defs/snygg-defined-var-value"
+            },
+            {
+              "$ref": "#/$defs/snygg-ms-duration-value"
             }
           ]
         },

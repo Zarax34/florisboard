@@ -131,6 +131,9 @@ data class SnyggSinglePropertySet internal constructor(
     val shape = properties[Snygg.Shape] ?: SnyggUndefinedValue
     val clip = properties[Snygg.Clip] ?: SnyggUndefinedValue
 
+    val scale = properties[Snygg.Scale] ?: SnyggUndefinedValue
+    val transitionDuration = properties[Snygg.TransitionDuration] ?: SnyggUndefinedValue
+
     val src = properties[Snygg.Src] ?: SnyggUndefinedValue
 
     val textAlign = properties[Snygg.TextAlign] ?: SnyggUndefinedValue

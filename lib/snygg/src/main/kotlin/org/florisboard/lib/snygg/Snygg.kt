@@ -31,7 +31,9 @@ import org.florisboard.lib.snygg.value.SnyggInheritValue
 import org.florisboard.lib.snygg.value.SnyggNoValue
 import org.florisboard.lib.snygg.value.SnyggContentScaleValue
 import org.florisboard.lib.snygg.value.SnyggPaddingValue
+import org.florisboard.lib.snygg.value.SnyggMsDurationValue
 import org.florisboard.lib.snygg.value.SnyggRectangleShapeValue
+import org.florisboard.lib.snygg.value.SnyggScaleValue
 import org.florisboard.lib.snygg.value.SnyggRoundedCornerDpShapeValue
 import org.florisboard.lib.snygg.value.SnyggRoundedCornerPercentShapeValue
 import org.florisboard.lib.snygg.value.SnyggSpSizeValue
@@ -75,6 +77,9 @@ object Snygg {
 
     const val Shape = "shape"
     const val Clip = "clip"
+
+    const val Scale = "scale"
+    const val TransitionDuration = "transition-duration"
 
     const val Src = "src"
 
@@ -197,6 +202,14 @@ object SnyggSpec : SnyggSpecDecl({
         Snygg.Clip {
             add(SnyggYesValue)
             add(SnyggNoValue)
+        }
+
+        Snygg.Scale {
+            add(SnyggScaleValue)
+        }
+        Snygg.TransitionDuration {
+            inheritsImplicitly()
+            add(SnyggMsDurationValue)
         }
 
         Snygg.TextAlign {

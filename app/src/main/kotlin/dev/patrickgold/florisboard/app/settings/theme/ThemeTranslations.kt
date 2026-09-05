@@ -86,6 +86,8 @@ private val PropertyNameMap = mapOf(
     Snygg.ShadowElevation to R.string.snygg__property_name__shadow_elevation,
     Snygg.Shape to R.string.snygg__property_name__shape,
     Snygg.Clip to R.string.snygg__property_name__clip,
+    Snygg.Scale to R.string.snygg__property_name__scale,
+    Snygg.TransitionDuration to R.string.snygg__property_name__transition_duration,
     Snygg.Src to R.string.snygg__property_name__src,
     Snygg.TextAlign to R.string.snygg__property_name__text_align,
     Snygg.TextDecorationLine to R.string.snygg__property_name__text_decoration_line,

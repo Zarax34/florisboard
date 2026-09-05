@@ -62,6 +62,7 @@ fun SnyggRow(
     ProvideSnyggStyle(elementName, attributes, selector) { style ->
         Row(
             modifier = modifier
+                .snyggScale(style)
                 .snyggMargin(style)
                 .snyggShadow(style)
                 .snyggBorder(style)

@@ -116,7 +116,9 @@ import org.florisboard.lib.snygg.value.SnyggEnumLikeValueEncoder
 import org.florisboard.lib.snygg.value.SnyggFontStyleValue
 import org.florisboard.lib.snygg.value.SnyggFontWeightValue
 import org.florisboard.lib.snygg.value.SnyggGenericFontFamilyValue
+import org.florisboard.lib.snygg.value.SnyggMsDurationValue
 import org.florisboard.lib.snygg.value.SnyggPaddingValue
+import org.florisboard.lib.snygg.value.SnyggScaleValue
 import org.florisboard.lib.snygg.value.SnyggPercentShapeValue
 import org.florisboard.lib.snygg.value.SnyggPercentageSizeValue
 import org.florisboard.lib.snygg.value.SnyggRoundedCornerDpShapeValue
@@ -705,6 +707,52 @@ private fun PropertyValueEditor(
                             icon = Icons.AutoMirrored.Filled.ManageSearch,
                         )
                     },
+                )
+            }
+        }
+
+        is SnyggScaleValue -> {
+            var scaleStr by remember {
+                mutableStateOf(value.scale.toStringWithoutDotZero())
+            }
+            Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+                JetPrefTextField(
+                    modifier = Modifier.weight(1f),
+                    value = scaleStr,
+                    onValueChange = { newValue ->
+                        scaleStr = newValue
+                        val scale = scaleStr.toFloatOrNull()?.takeIf { it >= 0f }
+                        onValueChange(SnyggScaleValue(scale ?: Float.NaN))
+                    },
+                    isError = value.scale.isNaN() || value.scale < 0f,
+                )
+                Text(
+                    modifier = Modifier.padding(start = 8.dp),
+                    text = "×",
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
+        }
+
+        is SnyggMsDurationValue -> {
+            var durationStr by remember {
+                mutableStateOf(value.millis.toString())
+            }
+            Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+                JetPrefTextField(
+                    modifier = Modifier.weight(1f),
+                    value = durationStr,
+                    onValueChange = { newValue ->
+                        durationStr = newValue
+                        val millis = durationStr.toIntOrNull()?.takeIf { it >= 0 }
+                        onValueChange(SnyggMsDurationValue(millis ?: -1))
+                    },
+                    isError = value.millis < 0,
+                )
+                Text(
+                    modifier = Modifier.padding(start = 8.dp),
+                    text = "ms",
+                    fontFamily = FontFamily.Monospace,
                 )
             }
         }

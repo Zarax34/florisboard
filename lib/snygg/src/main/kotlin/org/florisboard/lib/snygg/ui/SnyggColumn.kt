@@ -60,6 +60,7 @@ fun SnyggColumn(
     ProvideSnyggStyle(elementName, attributes, selector) { style ->
         Column(
             modifier = modifier
+                .snyggScale(style)
                 .snyggMargin(style)
                 .snyggShadow(style)
                 .snyggBorder(style)
