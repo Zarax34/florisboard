@@ -539,7 +539,7 @@
 
     <!-- Voice input -->
     <string name="settings__voice_input__title" comment="Title of the Voice input settings screen">Voice typing</string>
-    <string name="settings__voice_input__info">Voice typing uses the speech recognition service installed on your device. Whether recognition happens on-device or in the cloud is up to that service.</string>
+    <string name="settings__voice_input__info">Voice typing uses the speech recognition service installed on your device. Whether recognition happens on-device or in the cloud is up to that service. Dictation keeps running through pauses until you stop it, and gives up on its own after two minutes of complete silence.</string>
     <string name="pref__voice_input__use_built_in__label" comment="Preference title">Type by voice inside the keyboard</string>
     <string name="pref__voice_input__use_built_in__summary" comment="Preference summary">Keeps FlorisBoard on screen while dictating instead of switching to another keyboard\'s voice input</string>
     <string name="pref__voice_input__mode__label" comment="Preference title">Microphone key behaviour</string>
