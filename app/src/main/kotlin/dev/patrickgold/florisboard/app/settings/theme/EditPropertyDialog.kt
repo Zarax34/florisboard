@@ -116,7 +116,10 @@ import org.florisboard.lib.snygg.value.SnyggEnumLikeValueEncoder
 import org.florisboard.lib.snygg.value.SnyggFontStyleValue
 import org.florisboard.lib.snygg.value.SnyggFontWeightValue
 import org.florisboard.lib.snygg.value.SnyggGenericFontFamilyValue
+import org.florisboard.lib.snygg.value.SnyggEasingValue
 import org.florisboard.lib.snygg.value.SnyggMsDurationValue
+import org.florisboard.lib.snygg.value.SnyggOffsetValue
+import org.florisboard.lib.snygg.value.SnyggRotationValue
 import org.florisboard.lib.snygg.value.SnyggPaddingValue
 import org.florisboard.lib.snygg.value.SnyggScaleValue
 import org.florisboard.lib.snygg.value.SnyggPercentShapeValue
@@ -595,6 +598,10 @@ private fun PropertyValueEditor(
             EnumLikeValueEditor(value.encoder(), value, onValueChange, modifier)
         }
 
+        is SnyggEasingValue -> {
+            EnumLikeValueEditor(value.encoder(), value, onValueChange, modifier)
+        }
+
         is SnyggTextAlignValue -> {
             EnumLikeValueEditor(value.encoder(), value, onValueChange, modifier)
         }
@@ -729,6 +736,51 @@ private fun PropertyValueEditor(
                 Text(
                     modifier = Modifier.padding(start = 8.dp),
                     text = "×",
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
+        }
+
+        is SnyggRotationValue -> {
+            var degreesStr by remember {
+                mutableStateOf(value.degrees.toStringWithoutDotZero())
+            }
+            Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+                JetPrefTextField(
+                    modifier = Modifier.weight(1f),
+                    value = degreesStr,
+                    onValueChange = { newValue ->
+                        degreesStr = newValue
+                        onValueChange(SnyggRotationValue(degreesStr.toFloatOrNull() ?: Float.NaN))
+                    },
+                    isError = value.degrees.isNaN(),
+                )
+                Text(
+                    modifier = Modifier.padding(start = 8.dp),
+                    text = "deg",
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
+        }
+
+        is SnyggOffsetValue -> {
+            var offsetStr by remember {
+                mutableStateOf(value.dp.value.toStringWithoutDotZero())
+            }
+            Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+                JetPrefTextField(
+                    modifier = Modifier.weight(1f),
+                    value = offsetStr,
+                    onValueChange = { newValue ->
+                        offsetStr = newValue
+                        val offset = offsetStr.toFloatOrNull()?.dp ?: Dp.Unspecified
+                        onValueChange(SnyggOffsetValue(offset))
+                    },
+                    isError = value.dp.isUnspecified,
+                )
+                Text(
+                    modifier = Modifier.padding(start = 8.dp),
+                    text = "dp",
                     fontFamily = FontFamily.Monospace,
                 )
             }

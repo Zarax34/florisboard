@@ -180,6 +180,25 @@
       "type": "string",
       "pattern": "^\\s*(?<duration>0|[1-9][0-9]*)ms\\s*$"
     },
+    "snygg-rotation-value": {
+      "type": "string",
+      "pattern": "^\\s*(?<angle>-?(?:0|[1-9][0-9]*)(?:[.][0-9]*)?|-?[.][0-9]+)deg\\s*$"
+    },
+    "snygg-offset-value": {
+      "type": "string",
+      "pattern": "^\\s*(?<offset>-?(?:0|[1-9][0-9]*)(?:[.][0-9]*)?|-?[.][0-9]+)dp\\s*$"
+    },
+    "snygg-easing-value": {
+      "type": "string",
+      "enum": [
+        "linear",
+        "ease",
+        "ease-in",
+        "ease-out",
+        "ease-in-out",
+        "bounce"
+      ]
+    },
     "snygg-text-align-value": {
       "type": "string",
       "enum": [
@@ -645,6 +664,45 @@
             }
           ]
         },
+        "rotation": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/snygg-inherit-value"
+            },
+            {
+              "$ref": "#/$defs/snygg-defined-var-value"
+            },
+            {
+              "$ref": "#/$defs/snygg-rotation-value"
+            }
+          ]
+        },
+        "translation-x": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/snygg-inherit-value"
+            },
+            {
+              "$ref": "#/$defs/snygg-defined-var-value"
+            },
+            {
+              "$ref": "#/$defs/snygg-offset-value"
+            }
+          ]
+        },
+        "translation-y": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/snygg-inherit-value"
+            },
+            {
+              "$ref": "#/$defs/snygg-defined-var-value"
+            },
+            {
+              "$ref": "#/$defs/snygg-offset-value"
+            }
+          ]
+        },
         "transition-duration": {
           "oneOf": [
             {
@@ -655,6 +713,19 @@
             },
             {
               "$ref": "#/$defs/snygg-ms-duration-value"
+            }
+          ]
+        },
+        "transition-timing-function": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/snygg-inherit-value"
+            },
+            {
+              "$ref": "#/$defs/snygg-defined-var-value"
+            },
+            {
+              "$ref": "#/$defs/snygg-easing-value"
             }
           ]
         },

@@ -29,6 +29,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FormatAlignLeft
 import androidx.compose.material.icons.automirrored.filled.FormatAlignRight
 import androidx.compose.material.icons.automirrored.filled.WrapText
+import androidx.compose.material.icons.filled.OpenWith
+import androidx.compose.material.icons.filled.RotateRight
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.material.icons.filled.AttachFile
@@ -75,7 +78,10 @@ import org.florisboard.lib.snygg.value.SnyggFontStyleValue
 import org.florisboard.lib.snygg.value.SnyggFontWeightValue
 import org.florisboard.lib.snygg.value.SnyggGenericFontFamilyValue
 import org.florisboard.lib.snygg.value.SnyggNoValue
+import org.florisboard.lib.snygg.value.SnyggEasingValue
 import org.florisboard.lib.snygg.value.SnyggMsDurationValue
+import org.florisboard.lib.snygg.value.SnyggOffsetValue
+import org.florisboard.lib.snygg.value.SnyggRotationValue
 import org.florisboard.lib.snygg.value.SnyggPaddingValue
 import org.florisboard.lib.snygg.value.SnyggScaleValue
 import org.florisboard.lib.snygg.value.SnyggRoundedCornerDpShapeValue
@@ -294,6 +300,30 @@ internal fun SnyggValueIcon(
             Icon(
                 modifier = modifier.requiredSize(spec.iconSize),
                 imageVector = Icons.Default.ZoomOutMap,
+                contentDescription = null,
+            )
+        }
+
+        is SnyggRotationValue -> {
+            Icon(
+                modifier = modifier.requiredSize(spec.iconSize),
+                imageVector = Icons.Default.RotateRight,
+                contentDescription = null,
+            )
+        }
+
+        is SnyggOffsetValue -> {
+            Icon(
+                modifier = modifier.requiredSize(spec.iconSize),
+                imageVector = Icons.Default.OpenWith,
+                contentDescription = null,
+            )
+        }
+
+        is SnyggEasingValue -> {
+            Icon(
+                modifier = modifier.requiredSize(spec.iconSize),
+                imageVector = Icons.Default.ShowChart,
                 contentDescription = null,
             )
         }

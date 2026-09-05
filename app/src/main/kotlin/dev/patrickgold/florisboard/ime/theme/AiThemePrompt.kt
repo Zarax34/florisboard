@@ -42,9 +42,11 @@ object AiThemePrompt {
             "shape": "var(--shape)",
             "shadow-elevation": "3dp",
             "transition-duration": "100ms",
-            "scale": "1"
+            "transition-timing-function": "ease-out",
+            "scale": "1",
+            "translation-y": "0dp"
           },
-          "key:pressed": { "background": "var(--primary)", "scale": "0.94" },
+          "key:pressed": { "background": "var(--primary)", "scale": "0.94", "translation-y": "1dp" },
           "key[code=10]": { "background": "var(--primary)", "foreground": "#ffffff" },
           "smartbar-candidate-word": { "background": "transparent", "foreground": "var(--on-surface)" }
         }
@@ -100,7 +102,11 @@ object AiThemePrompt {
               The four corners are top-start, top-end, bottom-end, bottom-start.
             - clip: "yes" | "no".
             - scale: a size multiplier as a string, e.g. "0.94". 1 is the natural size.
+            - rotation: a clockwise angle, e.g. "6deg". Negative turns the other way, e.g. "-6deg".
+            - translation-x, translation-y: a signed dp shift, e.g. "2dp" or "-1dp".
             - transition-duration: how long a state change takes, e.g. "120ms". 0 or absent means instant.
+            - transition-timing-function: "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out" |
+              "bounce" (a slight overshoot). Defaults to "ease".
             - text-align: "start" | "center" | "end" | "left" | "right" | "justify".
             - text-decoration-line: "none" | "underline" | "line-through".
             - text-max-lines: a whole number as a string, e.g. "1". text-overflow: "clip" | "ellipsis" | "visible".
@@ -108,19 +114,25 @@ object AiThemePrompt {
             # Animation
             An element animates when it declares a non-zero "transition-duration". The properties that then
             ease into their new value instead of snapping are: background, foreground, border-color,
-            shadow-color, border-width, shadow-elevation and scale. Because a ":pressed" rule is just another
-            state of the same element, this is how you make a key react to a touch.
+            shadow-color, border-width, shadow-elevation, scale, rotation, translation-x and translation-y.
+            "transition-timing-function" chooses the curve. Because a ":pressed" rule is just another state
+            of the same element, this is how you make a key react to a touch.
 
-            To make keys dip and spring back when pressed, put "transition-duration" AND "scale": "1" on the
-            base rule, and the smaller scale on the pressed rule:
-              "key": { "transition-duration": "100ms", "scale": "1", ... }
-              "key:pressed": { "scale": "0.94", "background": "..." }
-            The "scale": "1" on the base rule matters: without it the key snaps back instead of animating
-            back. Keep durations between 60ms and 250ms - anything slower feels laggy while typing, and
-            keep pressed scale between 0.85 and 1.05.
+            Every animated property needs a value on the BASE rule as well as the pressed rule, otherwise the
+            element snaps back instead of animating back. So declare the resting values explicitly:
+              "key": {
+                "transition-duration": "110ms", "transition-timing-function": "ease-out",
+                "scale": "1", "rotation": "0deg", "translation-y": "0dp", ...
+              }
+              "key:pressed": { "scale": "0.94", "translation-y": "1dp", "background": "..." }
 
-            There is no keyframe, easing-curve, rotation or translation support. Do not invent properties
-            like "animation", "transform" or "transition-timing-function" - they are rejected on import.
+            Guidance that keeps a keyboard usable: durations 60-250ms (slower feels laggy while typing),
+            pressed scale 0.85-1.05, rotation within about 10deg, translation within about 4dp. Use "bounce"
+            sparingly - it overshoots, which is fun on a single accent key and tiring on all of them.
+
+            There is still no keyframe or multi-step animation support, and no per-property duration. Do not
+            invent properties like "animation", "transform", "transition-delay" or "@keyframes" - they are
+            rejected on import.
 
             # Colors
             "#rrggbb", "#rrggbbaa", "rgb(124, 77, 255)", "rgba(124, 77, 255, 0.5)", "transparent",

@@ -69,12 +69,15 @@
     "shadow-elevation": "0dp",
     "text-max-lines": "1",
     "transition-duration": "120ms",
-    "scale": "1"
+    "scale": "1",
+    "transition-timing-function": "ease-in-out",
+    "translation-y": "0dp"
   },
   "key:pressed": {
     "background": "var(--surface-variant)",
     "foreground": "var(--on-surface)",
-    "scale": "0.93"
+    "scale": "0.93",
+    "translation-y": "2dp"
   },
   "key[code=-7,-11,-201,-202,-203,-204,-205,-227,-233]": {
     "background": "var(--special-key)",
@@ -82,12 +85,15 @@
     "shape": "var(--shape)",
     "shadow-elevation": "0dp",
     "transition-duration": "120ms",
-    "scale": "1"
+    "scale": "1",
+    "transition-timing-function": "ease-in-out",
+    "translation-y": "0dp"
   },
   "key[code=-7,-11,-201,-202,-203,-204,-205,-227,-233]:pressed": {
     "background": "var(--special-key-pressed)",
     "foreground": "var(--on-surface)",
-    "scale": "0.93"
+    "scale": "0.93",
+    "translation-y": "2dp"
   },
   "key[code=10]": {
     "background": "var(--primary)",
@@ -95,12 +101,15 @@
     "shape": "var(--shape)",
     "shadow-elevation": "0dp",
     "transition-duration": "120ms",
-    "scale": "1"
+    "scale": "1",
+    "transition-timing-function": "ease-in-out",
+    "translation-y": "0dp"
   },
   "key[code=10]:pressed": {
     "background": "var(--primary-variant)",
     "foreground": "var(--on-primary)",
-    "scale": "0.93"
+    "scale": "0.93",
+    "translation-y": "2dp"
   },
   "key[code=32]": {
     "background": "var(--surface)",
@@ -247,7 +256,8 @@
     "shape": "rectangle()",
     "text-max-lines": "1",
     "text-overflow": "ellipsis",
-    "transition-duration": "120ms"
+    "transition-duration": "120ms",
+    "transition-timing-function": "ease-in-out"
   },
   "smartbar-candidate-word:pressed": {
     "background": "var(--surface)",

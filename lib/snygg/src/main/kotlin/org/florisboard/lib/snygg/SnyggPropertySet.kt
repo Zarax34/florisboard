@@ -132,7 +132,11 @@ data class SnyggSinglePropertySet internal constructor(
     val clip = properties[Snygg.Clip] ?: SnyggUndefinedValue
 
     val scale = properties[Snygg.Scale] ?: SnyggUndefinedValue
+    val rotation = properties[Snygg.Rotation] ?: SnyggUndefinedValue
+    val translationX = properties[Snygg.TranslationX] ?: SnyggUndefinedValue
+    val translationY = properties[Snygg.TranslationY] ?: SnyggUndefinedValue
     val transitionDuration = properties[Snygg.TransitionDuration] ?: SnyggUndefinedValue
+    val transitionTimingFunction = properties[Snygg.TransitionTimingFunction] ?: SnyggUndefinedValue
 
     val src = properties[Snygg.Src] ?: SnyggUndefinedValue
 

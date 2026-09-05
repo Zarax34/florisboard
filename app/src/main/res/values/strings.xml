@@ -366,6 +366,10 @@
     <string name="snygg__property_name__clip">Clip</string>
     <string name="snygg__property_name__scale">Scale</string>
     <string name="snygg__property_name__transition_duration">Transition duration</string>
+    <string name="snygg__property_name__rotation">Rotation</string>
+    <string name="snygg__property_name__translation_x">Horizontal offset</string>
+    <string name="snygg__property_name__translation_y">Vertical offset</string>
+    <string name="snygg__property_name__transition_timing_function">Transition curve</string>
     <string name="snygg__property_name__src">Source</string>
     <string name="snygg__property_name__text_align">Text align</string>
     <string name="snygg__property_name__text_decoration_line">Text decoration line</string>

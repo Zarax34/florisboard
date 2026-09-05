@@ -82,7 +82,7 @@ fun SnyggBox(
         }
         Box(
             modifier = modifier
-                .snyggScale(style)
+                .snyggTransform(style)
                 .snyggMargin(style)
                 .snyggShadow(style)
                 .snyggBorder(style)

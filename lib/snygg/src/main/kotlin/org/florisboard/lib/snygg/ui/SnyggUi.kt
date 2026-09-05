@@ -17,6 +17,7 @@
 package org.florisboard.lib.snygg.ui
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -66,7 +67,10 @@ import org.florisboard.lib.snygg.value.SnyggAssetResolver
 import org.florisboard.lib.snygg.value.SnyggDefaultAssetResolver
 import org.florisboard.lib.snygg.value.SnyggDpSizeValue
 import org.florisboard.lib.snygg.value.SnyggNoValue
+import org.florisboard.lib.snygg.value.SnyggEasingValue
 import org.florisboard.lib.snygg.value.SnyggMsDurationValue
+import org.florisboard.lib.snygg.value.SnyggOffsetValue
+import org.florisboard.lib.snygg.value.SnyggRotationValue
 import org.florisboard.lib.snygg.value.SnyggPaddingValue
 import org.florisboard.lib.snygg.value.SnyggScaleValue
 import org.florisboard.lib.snygg.value.SnyggStaticColorValue
@@ -245,6 +249,12 @@ private val AnimatableDpProperties = listOf(
     Snygg.ShadowElevation,
 )
 
+/** Properties whose value is a signed dp offset. */
+private val AnimatableOffsetProperties = listOf(
+    Snygg.TranslationX,
+    Snygg.TranslationY,
+)
+
 /**
  * Returns [style] with its animatable properties replaced by values that ease toward the queried ones.
  *
@@ -258,13 +268,14 @@ internal fun rememberAnimatedStyle(style: SnyggSinglePropertySet): SnyggSinglePr
     if (durationMillis <= 0) {
         return style
     }
+    val easing = (style.transitionTimingFunction as? SnyggEasingValue)?.easing ?: FastOutSlowInEasing
     val properties = style.properties.toMutableMap()
     for (property in AnimatableColorProperties) {
         val value = style.properties[property]
         if (value is SnyggStaticColorValue) {
             val color = animateColorAsState(
                 targetValue = value.color,
-                animationSpec = tween(durationMillis),
+                animationSpec = tween(durationMillis, easing = easing),
                 label = property,
             )
             properties[property] = SnyggStaticColorValue(color.value)
@@ -275,20 +286,40 @@ internal fun rememberAnimatedStyle(style: SnyggSinglePropertySet): SnyggSinglePr
         if (value is SnyggDpSizeValue) {
             val size = animateDpAsState(
                 targetValue = value.dp,
-                animationSpec = tween(durationMillis),
+                animationSpec = tween(durationMillis, easing = easing),
                 label = property,
             )
             properties[property] = SnyggDpSizeValue(size.value)
+        }
+    }
+    for (property in AnimatableOffsetProperties) {
+        val value = style.properties[property]
+        if (value is SnyggOffsetValue) {
+            val offset = animateDpAsState(
+                targetValue = value.dp,
+                animationSpec = tween(durationMillis, easing = easing),
+                label = property,
+            )
+            properties[property] = SnyggOffsetValue(offset.value)
         }
     }
     val scaleValue = style.properties[Snygg.Scale]
     if (scaleValue is SnyggScaleValue) {
         val scale = animateFloatAsState(
             targetValue = scaleValue.scale,
-            animationSpec = tween(durationMillis),
+            animationSpec = tween(durationMillis, easing = easing),
             label = Snygg.Scale,
         )
         properties[Snygg.Scale] = SnyggScaleValue(scale.value)
+    }
+    val rotationValue = style.properties[Snygg.Rotation]
+    if (rotationValue is SnyggRotationValue) {
+        val degrees = animateFloatAsState(
+            targetValue = rotationValue.degrees,
+            animationSpec = tween(durationMillis, easing = easing),
+            label = Snygg.Rotation,
+        )
+        properties[Snygg.Rotation] = SnyggRotationValue(degrees.value)
     }
     return remember(properties) { SnyggSinglePropertySet(properties) }
 }
@@ -389,17 +420,30 @@ internal fun Modifier.snyggBorder(
 }
 
 /**
- * Scales an element around its center, driven by the `scale` property. A value of 1 (or no value at all)
- * leaves the element alone, so this is a no-op for every stylesheet that does not use it.
+ * Applies the `scale`, `rotation`, `translation-x` and `translation-y` properties, all around the element's
+ * center. An element that declares none of them is left completely alone, so this is a no-op for every
+ * stylesheet that does not use them.
  */
-internal fun Modifier.snyggScale(
+@Composable
+internal fun Modifier.snyggTransform(
     style: SnyggSinglePropertySet,
 ): Modifier {
-    val scale = (style.scale as? SnyggScaleValue)?.scale ?: return this
-    if (scale == 1f) {
+    val scale = (style.scale as? SnyggScaleValue)?.scale ?: 1f
+    val rotation = (style.rotation as? SnyggRotationValue)?.degrees ?: 0f
+    val translationX = (style.translationX as? SnyggOffsetValue)?.dp ?: 0.dp
+    val translationY = (style.translationY as? SnyggOffsetValue)?.dp ?: 0.dp
+    if (scale == 1f && rotation == 0f && translationX == 0.dp && translationY == 0.dp) {
         return this
     }
-    return this.graphicsLayer(scaleX = scale, scaleY = scale)
+    return with(LocalDensity.current) {
+        this@snyggTransform.graphicsLayer(
+            scaleX = scale,
+            scaleY = scale,
+            rotationZ = rotation,
+            translationX = translationX.toPx(),
+            translationY = translationY.toPx(),
+        )
+    }
 }
 
 internal fun Modifier.snyggMargin(

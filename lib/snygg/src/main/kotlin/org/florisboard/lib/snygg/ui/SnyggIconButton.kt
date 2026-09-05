@@ -70,7 +70,7 @@ fun SnyggIconButton(
     ProvideSnyggStyle(elementName, attributes, selector) { style ->
         Box(
             modifier = Modifier
-                .snyggScale(style)
+                .snyggTransform(style)
                 .snyggMargin(style)
                 .snyggShadow(style)
                 .snyggBorder(style)

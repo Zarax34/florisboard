@@ -46,6 +46,13 @@
         "modifier": "org.florisboard.layouts:arabic"
       },
       {
+        "id": "arabic_ios",
+        "label": "Arabic (iOS)",
+        "authors": [ "zarax34" ],
+        "direction": "rtl",
+        "modifier": "org.florisboard.layouts:arabic"
+      },
+      {
         "id": "armenian_alt_phonetic",
         "label": "Armenian Alt Phonetic",
         "authors": [ "MikayelB" ],
@@ -789,6 +796,12 @@
         "authors": [ "waelwindows" ],
         "direction": "ltr",
         "modifier": "org.florisboard.layouts:cjk"
+      },
+      {
+        "id": "arabic_ios",
+        "label": "Arabic (iOS hints)",
+        "authors": [ "zarax34" ],
+        "direction": "rtl"
       },
       {
         "id": "eastern",

@@ -31,7 +31,10 @@ import org.florisboard.lib.snygg.value.SnyggInheritValue
 import org.florisboard.lib.snygg.value.SnyggNoValue
 import org.florisboard.lib.snygg.value.SnyggContentScaleValue
 import org.florisboard.lib.snygg.value.SnyggPaddingValue
+import org.florisboard.lib.snygg.value.SnyggEasingValue
 import org.florisboard.lib.snygg.value.SnyggMsDurationValue
+import org.florisboard.lib.snygg.value.SnyggOffsetValue
+import org.florisboard.lib.snygg.value.SnyggRotationValue
 import org.florisboard.lib.snygg.value.SnyggRectangleShapeValue
 import org.florisboard.lib.snygg.value.SnyggScaleValue
 import org.florisboard.lib.snygg.value.SnyggRoundedCornerDpShapeValue
@@ -79,7 +82,11 @@ object Snygg {
     const val Clip = "clip"
 
     const val Scale = "scale"
+    const val Rotation = "rotation"
+    const val TranslationX = "translation-x"
+    const val TranslationY = "translation-y"
     const val TransitionDuration = "transition-duration"
+    const val TransitionTimingFunction = "transition-timing-function"
 
     const val Src = "src"
 
@@ -207,9 +214,22 @@ object SnyggSpec : SnyggSpecDecl({
         Snygg.Scale {
             add(SnyggScaleValue)
         }
+        Snygg.Rotation {
+            add(SnyggRotationValue)
+        }
+        Snygg.TranslationX {
+            add(SnyggOffsetValue)
+        }
+        Snygg.TranslationY {
+            add(SnyggOffsetValue)
+        }
         Snygg.TransitionDuration {
             inheritsImplicitly()
             add(SnyggMsDurationValue)
+        }
+        Snygg.TransitionTimingFunction {
+            inheritsImplicitly()
+            add(SnyggEasingValue)
         }
 
         Snygg.TextAlign {
