@@ -804,6 +804,12 @@
         "direction": "rtl"
       },
       {
+        "id": "arabic_hints",
+        "label": "Arabic (hints)",
+        "authors": [ "zarax34" ],
+        "direction": "rtl"
+      },
+      {
         "id": "eastern",
         "label": "Eastern",
         "authors": [ "patrickgold" ],
