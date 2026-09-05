@@ -16,6 +16,11 @@
 
 package org.florisboard.lib.snygg.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.PaddingValues
@@ -33,6 +38,7 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.DefaultShadowColor
 import androidx.compose.ui.graphics.Shape
@@ -49,6 +55,7 @@ import kotlinx.coroutines.runBlocking
 import org.florisboard.lib.color.MaterialYouFlags
 import org.florisboard.lib.color.systemAccentOrDefault
 import org.florisboard.lib.snygg.CompiledFontFamilyData
+import org.florisboard.lib.snygg.Snygg
 import org.florisboard.lib.snygg.SnyggQueryAttributes
 import org.florisboard.lib.snygg.SnyggRule
 import org.florisboard.lib.snygg.SnyggSelector
@@ -60,7 +67,12 @@ import org.florisboard.lib.snygg.value.SnyggAssetResolver
 import org.florisboard.lib.snygg.value.SnyggDefaultAssetResolver
 import org.florisboard.lib.snygg.value.SnyggDpSizeValue
 import org.florisboard.lib.snygg.value.SnyggNoValue
+import org.florisboard.lib.snygg.value.SnyggEasingValue
+import org.florisboard.lib.snygg.value.SnyggMsDurationValue
+import org.florisboard.lib.snygg.value.SnyggOffsetValue
+import org.florisboard.lib.snygg.value.SnyggRotationValue
 import org.florisboard.lib.snygg.value.SnyggPaddingValue
+import org.florisboard.lib.snygg.value.SnyggScaleValue
 import org.florisboard.lib.snygg.value.SnyggStaticColorValue
 import org.florisboard.lib.snygg.value.SnyggUriValue
 import org.florisboard.lib.snygg.value.SnyggValue
@@ -212,7 +224,7 @@ internal fun ProvideSnyggStyle(
     content: @Composable (style: SnyggSinglePropertySet) -> Unit
 ) {
     val theme = LocalSnyggTheme.current
-    val style = theme.rememberQuery(elementName, attributes, selector)
+    val style = rememberAnimatedStyle(theme.rememberQuery(elementName, attributes, selector))
     val parentSelector = selector ?: LocalSnyggParentSelector.current
     CompositionLocalProvider(
         LocalSnyggParentStyle provides style,
@@ -221,6 +233,95 @@ internal fun ProvideSnyggStyle(
     ) {
         content(style)
     }
+}
+
+/** Properties whose value is a color and which are therefore worth cross-fading. */
+private val AnimatableColorProperties = listOf(
+    Snygg.Background,
+    Snygg.Foreground,
+    Snygg.BorderColor,
+    Snygg.ShadowColor,
+)
+
+/** Properties whose value is a dp size and which can be animated by interpolating that size. */
+private val AnimatableDpProperties = listOf(
+    Snygg.BorderWidth,
+    Snygg.ShadowElevation,
+)
+
+/** Properties whose value is a signed dp offset. */
+private val AnimatableOffsetProperties = listOf(
+    Snygg.TranslationX,
+    Snygg.TranslationY,
+)
+
+/**
+ * Returns [style] with its animatable properties replaced by values that ease toward the queried ones.
+ *
+ * An element opts in by declaring a non-zero `transition-duration`; without it the style is returned
+ * untouched and every value applies instantly, exactly as before this existed. Because a style is queried
+ * per selector, this is what turns a `key:pressed` rule into an animated press instead of a hard swap.
+ */
+@Composable
+internal fun rememberAnimatedStyle(style: SnyggSinglePropertySet): SnyggSinglePropertySet {
+    val durationMillis = (style.transitionDuration as? SnyggMsDurationValue)?.millis ?: 0
+    if (durationMillis <= 0) {
+        return style
+    }
+    val easing = (style.transitionTimingFunction as? SnyggEasingValue)?.easing ?: FastOutSlowInEasing
+    val properties = style.properties.toMutableMap()
+    for (property in AnimatableColorProperties) {
+        val value = style.properties[property]
+        if (value is SnyggStaticColorValue) {
+            val color = animateColorAsState(
+                targetValue = value.color,
+                animationSpec = tween(durationMillis, easing = easing),
+                label = property,
+            )
+            properties[property] = SnyggStaticColorValue(color.value)
+        }
+    }
+    for (property in AnimatableDpProperties) {
+        val value = style.properties[property]
+        if (value is SnyggDpSizeValue) {
+            val size = animateDpAsState(
+                targetValue = value.dp,
+                animationSpec = tween(durationMillis, easing = easing),
+                label = property,
+            )
+            properties[property] = SnyggDpSizeValue(size.value)
+        }
+    }
+    for (property in AnimatableOffsetProperties) {
+        val value = style.properties[property]
+        if (value is SnyggOffsetValue) {
+            val offset = animateDpAsState(
+                targetValue = value.dp,
+                animationSpec = tween(durationMillis, easing = easing),
+                label = property,
+            )
+            properties[property] = SnyggOffsetValue(offset.value)
+        }
+    }
+    val scaleValue = style.properties[Snygg.Scale]
+    if (scaleValue is SnyggScaleValue) {
+        val scale = animateFloatAsState(
+            targetValue = scaleValue.scale,
+            animationSpec = tween(durationMillis, easing = easing),
+            label = Snygg.Scale,
+        )
+        properties[Snygg.Scale] = SnyggScaleValue(scale.value)
+    }
+    val rotationValue = style.properties[Snygg.Rotation]
+    if (rotationValue is SnyggRotationValue) {
+        val degrees = animateFloatAsState(
+            targetValue = rotationValue.degrees,
+            animationSpec = tween(durationMillis, easing = easing),
+            label = Snygg.Rotation,
+        )
+        properties[Snygg.Rotation] = SnyggRotationValue(degrees.value)
+    }
+    return remember(properties) { SnyggSinglePropertySet(properties) }
 }
 
 val SnyggRule.Companion.Saver: Saver<SnyggRule?, String>
@@ -315,6 +416,33 @@ internal fun Modifier.snyggBorder(
         this.border(width, color, shape)
     } else {
         this
+    }
+}
+
+/**
+ * Applies the `scale`, `rotation`, `translation-x` and `translation-y` properties, all around the element's
+ * center. An element that declares none of them is left completely alone, so this is a no-op for every
+ * stylesheet that does not use them.
+ */
+@Composable
+internal fun Modifier.snyggTransform(
+    style: SnyggSinglePropertySet,
+): Modifier {
+    val scale = (style.scale as? SnyggScaleValue)?.scale ?: 1f
+    val rotation = (style.rotation as? SnyggRotationValue)?.degrees ?: 0f
+    val translationX = (style.translationX as? SnyggOffsetValue)?.dp ?: 0.dp
+    val translationY = (style.translationY as? SnyggOffsetValue)?.dp ?: 0.dp
+    if (scale == 1f && rotation == 0f && translationX == 0.dp && translationY == 0.dp) {
+        return this
+    }
+    return with(LocalDensity.current) {
+        this@snyggTransform.graphicsLayer(
+            scaleX = scale,
+            scaleY = scale,
+            rotationZ = rotation,
+            translationX = translationX.toPx(),
+            translationY = translationY.toPx(),
+        )
     }
 }
 

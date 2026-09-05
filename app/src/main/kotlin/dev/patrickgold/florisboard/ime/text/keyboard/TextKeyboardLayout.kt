@@ -630,6 +630,11 @@ private class TextKeyboardLayoutController(
                     onTouchCancelInternal(event, pointer)
                     onTouchDownInternal(event, pointer)
                 }
+            } else if (initialKey.computedData.code == KeyCode.SPACE || initialKey.computedData.code == KeyCode.CJK_SPACE) {
+                // The space bar doubles as a swipe-gesture surface (cursor move / language switch). Keep it as the
+                // pressed/active key for the whole gesture instead of hopping onto whichever key the finger
+                // currently hovers over, which would otherwise flicker-press neighboring keys mid-swipe before the
+                // swipe gesture is recognized (see SwipeGesture.Detector's distance/velocity thresholds).
             } else {
                 if ((event.getX(pointer.index) < activeKey.visibleBounds.left - 0.1f * activeKey.visibleBounds.width)
                     || (event.getX(pointer.index) > activeKey.visibleBounds.right + 0.1f * activeKey.visibleBounds.width)
@@ -832,11 +837,17 @@ private class TextKeyboardLayoutController(
     private fun handleSpaceSwipe(event: SwipeGesture.Event): Boolean {
         val pointer = pointerMap.findById(event.pointerId) ?: return false
 
+        val languageSwitchOnSwipe = prefs.gestures.spaceBarSwipeLanguageSwitch.get()
+
         return when (event.type) {
             SwipeGesture.Type.TOUCH_MOVE -> when (event.direction) {
                 SwipeGesture.Direction.LEFT -> {
                     val action = prefs.gestures.spaceBarSwipeLeft.get()
-                    if (action == SwipeAction.MOVE_CURSOR_LEFT) {
+                    if (languageSwitchOnSwipe) {
+                        // Wait for the swipe to finish (TOUCH_UP) before switching the subtype, so a single swipe
+                        // switches exactly once instead of once per moved unit.
+                        false
+                    } else if (action == SwipeAction.MOVE_CURSOR_LEFT) {
                         abs(event.relUnitCountX).let {
                             val count = if (!pointer.hasTriggeredGestureMove) it - 1 else it
                             if (count > 0) {
@@ -855,7 +866,9 @@ private class TextKeyboardLayoutController(
                 }
                 SwipeGesture.Direction.RIGHT -> {
                     val action = prefs.gestures.spaceBarSwipeRight.get()
-                    if (action == SwipeAction.MOVE_CURSOR_RIGHT) {
+                    if (languageSwitchOnSwipe) {
+                        false
+                    } else if (action == SwipeAction.MOVE_CURSOR_RIGHT) {
                         abs(event.relUnitCountX).let {
                             val count = if (!pointer.hasTriggeredGestureMove) it - 1 else it
                             if (count > 0) {
@@ -876,33 +889,43 @@ private class TextKeyboardLayoutController(
             }
             SwipeGesture.Type.TOUCH_UP -> when (event.direction) {
                 SwipeGesture.Direction.LEFT -> {
-                    prefs.gestures.spaceBarSwipeLeft.get().let {
-                        when {
-                            it == SwipeAction.NO_ACTION -> {
-                                false
-                            }
-                            it != SwipeAction.MOVE_CURSOR_LEFT -> {
-                                keyboardManager.executeSwipeAction(it)
-                                true
-                            }
-                            else -> {
-                                false
+                    if (languageSwitchOnSwipe) {
+                        keyboardManager.executeSwipeAction(SwipeAction.SWITCH_TO_PREV_SUBTYPE)
+                        true
+                    } else {
+                        prefs.gestures.spaceBarSwipeLeft.get().let {
+                            when {
+                                it == SwipeAction.NO_ACTION -> {
+                                    false
+                                }
+                                it != SwipeAction.MOVE_CURSOR_LEFT -> {
+                                    keyboardManager.executeSwipeAction(it)
+                                    true
+                                }
+                                else -> {
+                                    false
+                                }
                             }
                         }
                     }
                 }
                 SwipeGesture.Direction.RIGHT -> {
-                    prefs.gestures.spaceBarSwipeRight.get().let {
-                        when {
-                            it == SwipeAction.NO_ACTION -> {
-                                false
-                            }
-                            it != SwipeAction.MOVE_CURSOR_RIGHT -> {
-                                keyboardManager.executeSwipeAction(it)
-                                true
-                            }
-                            else -> {
-                                false
+                    if (languageSwitchOnSwipe) {
+                        keyboardManager.executeSwipeAction(SwipeAction.SWITCH_TO_NEXT_SUBTYPE)
+                        true
+                    } else {
+                        prefs.gestures.spaceBarSwipeRight.get().let {
+                            when {
+                                it == SwipeAction.NO_ACTION -> {
+                                    false
+                                }
+                                it != SwipeAction.MOVE_CURSOR_RIGHT -> {
+                                    keyboardManager.executeSwipeAction(it)
+                                    true
+                                }
+                                else -> {
+                                    false
+                                }
                             }
                         }
                     }

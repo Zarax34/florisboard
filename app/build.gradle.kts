@@ -17,6 +17,7 @@
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.agp.application)
@@ -40,6 +41,28 @@ val projectVersionNameSuffix = projectVersionName.substringAfter("-", "").let { 
         suffix
     }
 }
+
+// App signing. Populated either from a local (gitignored) keystore.properties file - see
+// `utils/setup_signing.sh` to generate one - or, in CI, from environment variables the workflow sets from
+// GitHub Actions secrets of the same name. If neither is present, builds are left unsigned (as before), so
+// this stays optional for anyone who hasn't set up a signing key.
+val keystoreProperties = Properties().apply {
+    val propertiesFile = rootProject.file("keystore.properties")
+    if (propertiesFile.exists()) {
+        propertiesFile.inputStream().use { load(it) }
+    }
+}
+fun signingProp(propertyKey: String, envVar: String): String? =
+    keystoreProperties.getProperty(propertyKey) ?: System.getenv(envVar)
+val signingStoreFile = signingProp("storeFile", "SIGNING_STORE_FILE")
+val signingStorePassword = signingProp("storePassword", "SIGNING_STORE_PASSWORD")
+val signingKeyAlias = signingProp("keyAlias", "SIGNING_KEY_ALIAS")
+val signingKeyPassword = signingProp("keyPassword", "SIGNING_KEY_PASSWORD")
+val hasSigningConfig =
+    !signingStoreFile.isNullOrEmpty() &&
+        !signingStorePassword.isNullOrEmpty() &&
+        !signingKeyAlias.isNullOrEmpty() &&
+        !signingKeyPassword.isNullOrEmpty()
 
 kotlin {
     compilerOptions {
@@ -100,6 +123,17 @@ configure<ApplicationExtension> {
         compose = true
     }
 
+    signingConfigs {
+        if (hasSigningConfig) {
+            create("florisSigning") {
+                storeFile = rootProject.file(signingStoreFile!!)
+                storePassword = signingStorePassword
+                keyAlias = signingKeyAlias
+                keyPassword = signingKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         named("debug") {
             applicationIdSuffix = ".debug"
@@ -107,6 +141,8 @@ configure<ApplicationExtension> {
 
             isDebuggable = true
             isJniDebuggable = false
+
+            if (hasSigningConfig) signingConfig = signingConfigs.getByName("florisSigning")
         }
 
         create("beta") {
@@ -116,6 +152,8 @@ configure<ApplicationExtension> {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             isMinifyEnabled = true
             isShrinkResources = true
+
+            if (hasSigningConfig) signingConfig = signingConfigs.getByName("florisSigning")
         }
 
         named("release") {
@@ -124,6 +162,8 @@ configure<ApplicationExtension> {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             isMinifyEnabled = true
             isShrinkResources = true
+
+            if (hasSigningConfig) signingConfig = signingConfigs.getByName("florisSigning")
         }
 
         create("benchmark") {
@@ -203,6 +243,7 @@ dependencies {
     implementation(libs.kotlin.reflect)
     implementation(libs.kotlinx.coroutines)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.mlkit.translate)
     implementation(libs.mikepenz.aboutlibraries.core)
     implementation(libs.mikepenz.aboutlibraries.compose)
     implementation(libs.patrickgold.compose.tooltip)

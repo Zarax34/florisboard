@@ -93,6 +93,8 @@
     <string name="quick_action__toggle_incognito_mode__tooltip">Toggle incognito mode</string>
     <string name="quick_action__toggle_autocorrect" comment="Please mind the limited available space for the quick action strings">Autocorrect</string>
     <string name="quick_action__toggle_autocorrect__tooltip">Toggle autocorrect</string>
+    <string name="quick_action__translate">Translate</string>
+    <string name="quick_action__translate__tooltip">Translate the text in this field</string>
     <string name="quick_action__voice_input" comment="Please mind the limited available space for the quick action strings">Voice input</string>
     <string name="quick_action__voice_input__tooltip" comment="IME stands for Input Method Editor and is indirectly equivalent to 'keyboard'.">Open voice input provider</string>
     <string name="quick_action__floating_window_mode" comment="Please mind the limited available space for the quick action strings">Floating</string>
@@ -362,6 +364,12 @@
     <string name="snygg__property_name__shadow_elevation">Shadow elevation</string>
     <string name="snygg__property_name__shape">Shape</string>
     <string name="snygg__property_name__clip">Clip</string>
+    <string name="snygg__property_name__scale">Scale</string>
+    <string name="snygg__property_name__transition_duration">Transition duration</string>
+    <string name="snygg__property_name__rotation">Rotation</string>
+    <string name="snygg__property_name__translation_x">Horizontal offset</string>
+    <string name="snygg__property_name__translation_y">Vertical offset</string>
+    <string name="snygg__property_name__transition_timing_function">Transition curve</string>
     <string name="snygg__property_name__src">Source</string>
     <string name="snygg__property_name__text_align">Text align</string>
     <string name="snygg__property_name__text_decoration_line">Text decoration line</string>
@@ -453,6 +461,10 @@
     <string name="pref__keyboard__group_layout__label" comment="Preference group title">Layout</string>
     <string name="pref__keyboard__landscape_input_ui_mode__label" comment="Preference value">Landscape fullscreen input</string>
     <string name="pref__keyboard__key_spacing__label" comment="Preference title">Key spacing factor</string>
+    <string name="pref__keyboard__avoid_system_gesture_area__label" comment="Preference title">Avoid gesture navigation area</string>
+    <string name="pref__keyboard__avoid_system_gesture_area__summary" comment="Preference summary">Keeps keys clear of the edge strip reserved for the system back gesture, so edge swipes are not accidentally intercepted on gesture-navigation devices</string>
+    <string name="pref__keyboard__block_system_gestures__label" comment="Preference title">Block system gestures over the keyboard</string>
+    <string name="pref__keyboard__block_system_gestures__summary" comment="Preference summary">Reserves the whole keyboard area for typing. Turning this on stops the system back/navigation gesture from working while the keyboard is open</string>
     <string name="pref__keyboard__group_keypress__label" comment="Preference group title">Key press</string>
     <string name="pref__keyboard__popup_enabled__label" comment="Preference title">Popup visibility</string>
     <string name="pref__keyboard__popup_enabled__summary" comment="Preference summary">Show popup when you press a key</string>
@@ -487,6 +499,8 @@
     <string name="pref__suggestion__api30_inline_suggestions_enabled__summary" comment="Preference summary">Show inline suggestions provided by autofill services</string>
     <string name="pref__suggestion__incognito_mode__label" comment="Label of Incognito mode preference in Typing">Incognito mode</string>
     <string name="pref__correction__title" comment="Preference group title">Corrections</string>
+    <string name="pref__correction__auto_correct_enabled__label" comment="Preference title">Auto-correct</string>
+    <string name="pref__correction__auto_correct_enabled__summary" comment="Preference summary">Automatically correct a word to its most likely spelling when it is unambiguous, right after you finish typing it. Press backspace to undo a correction. Requires suggestions to be enabled above</string>
     <string name="pref__correction__auto_capitalization__label" comment="Preference title">Auto-capitalization</string>
     <string name="pref__correction__auto_capitalization__summary" comment="Preference summary">Capitalize words based on the current input context</string>
     <string name="pref__correction__auto_space_punctuation__label" comment="Preference title">Auto-space after punctuation</string>
@@ -504,6 +518,64 @@
     <string name="pref__spelling__use_udm_entries__label" comment="Label of Use user dictionary entries pref">Use user dictionary entries</string>
     <string name="pref__spelling__use_udm_entries__summary" comment="Summary of Use user dictionary entries pref">Look up entries from the user dictionaries</string>
 
+    <string name="settings__translation__title" comment="Title of the Translation settings screen">Translation</string>
+    <string name="settings__translation__info">Translation runs entirely on your device once the language packs are downloaded. The packs themselves are fetched from Google\'s servers by the ML Kit library and take up around 30 MB each. Nothing is downloaded until you pick a language below.</string>
+    <string name="settings__translation__languages_title" comment="Preference group title">Languages</string>
+    <string name="settings__translation__packs_title" comment="Preference group title">Language packs</string>
+    <string name="settings__translation__packs_description">Download a pack for every language you want to translate from or to. Both the source and the target language need a pack for offline translation to work.</string>
+    <string name="settings__translation__pack_downloaded">Downloaded</string>
+    <string name="settings__translation__pack_not_downloaded">Not downloaded</string>
+    <string name="settings__translation__download_pack" comment="Accessibility label">Download language pack</string>
+    <string name="settings__translation__delete_pack" comment="Accessibility label">Delete language pack</string>
+    <string name="pref__translation__source_language__label" comment="Preference title">Translate from</string>
+    <string name="pref__translation__source_language__keyboard_language">Current keyboard language</string>
+    <string name="pref__translation__target_language__label" comment="Preference title">Translate to</string>
+    <string name="pref__translation__download_over_wifi_only__label" comment="Preference title">Download packs over Wi-Fi only</string>
+    <string name="pref__translation__download_over_wifi_only__summary" comment="Preference summary">Avoids using mobile data for the (fairly large) language pack downloads</string>
+    <string name="translation__translating">Translating\u2026</string>
+    <string name="translation__error_nothing_to_translate">There is no text to translate</string>
+    <string name="translation__error_same_language">Source and target language are the same</string>
+    <string name="translation__error_failed">Translation failed. Check that the language packs are downloaded and try again.</string>
+
+    <!-- Voice input -->
+    <string name="settings__voice_input__title" comment="Title of the Voice input settings screen">Voice typing</string>
+    <string name="settings__voice_input__info">Voice typing uses the speech recognition service installed on your device. Whether recognition happens on-device or in the cloud is up to that service. Dictation keeps running through pauses until you stop it, and gives up on its own after two minutes of complete silence.</string>
+    <string name="pref__voice_input__use_built_in__label" comment="Preference title">Type by voice inside the keyboard</string>
+    <string name="pref__voice_input__use_built_in__summary" comment="Preference summary">Keeps FlorisBoard on screen while dictating instead of switching to another keyboard\'s voice input</string>
+    <string name="pref__voice_input__mode__label" comment="Preference title">Microphone key behaviour</string>
+    <string name="enum__voice_input_mode__tap_to_toggle" comment="Enum value label">Tap to start, tap to stop</string>
+    <string name="enum__voice_input_mode__push_to_talk" comment="Enum value label">Hold to talk, release to stop</string>
+    <string name="voice_input__hold_to_talk_again">Microphone allowed. Press and hold the microphone key to dictate.</string>
+    <string name="pref__voice_input__auto_space__label" comment="Preference title">Insert a space before dictated text</string>
+    <string name="pref__voice_input__auto_space__summary" comment="Preference summary">Adds a space when the text before the cursor does not already end with one</string>
+    <string name="voice_input__listening">Listening\u2026</string>
+    <string name="voice_input__processing">Transcribing\u2026</string>
+    <string name="voice_input__error_not_available">No speech recognition service is installed on this device</string>
+    <string name="voice_input__error_no_permission">Microphone permission is needed for voice typing</string>
+    <string name="voice_input__error_network">Speech recognition needs a network connection right now</string>
+    <string name="voice_input__error_no_speech">Nothing was heard, try again</string>
+    <string name="voice_input__error_failed">Voice typing failed, try again</string>
+
+    <!-- AI theme designer -->
+    <string name="settings__theme__ai__title" comment="Title of the screen where a theme generated by an AI assistant is imported">Design a theme with AI</string>
+    <string name="settings__theme__ai__info">Describe the keyboard you want, copy the generated prompt into any AI assistant, then paste the stylesheet it replies with back here. Nothing is sent anywhere by FlorisBoard itself - you do the copying and pasting.</string>
+    <string name="settings__theme__ai__step_1_title" comment="Step title">1. Get the prompt</string>
+    <string name="settings__theme__ai__step_1_description">The prompt already contains everything the assistant needs to know about the theme format. Add your own description of the look you are after and copy the result.</string>
+    <string name="settings__theme__ai__design_brief_label" comment="Text field label">Your design</string>
+    <string name="settings__theme__ai__design_brief_placeholder" comment="Text field placeholder">Dark purple glass keys with rounded corners, a soft glow when pressed and an orange enter key</string>
+    <string name="settings__theme__ai__copy_prompt" comment="Button label">Copy prompt</string>
+    <string name="settings__theme__ai__prompt_copied" comment="Toast">Prompt copied to the clipboard</string>
+    <string name="settings__theme__ai__step_2_title" comment="Step title">2. Paste the result</string>
+    <string name="settings__theme__ai__step_2_description">Paste the stylesheet the assistant produced. It is checked before anything is installed, and any problem is reported below.</string>
+    <string name="settings__theme__ai__stylesheet_label" comment="Text field label">Stylesheet</string>
+    <string name="settings__theme__ai__theme_name_label" comment="Text field label">Theme name</string>
+    <string name="settings__theme__ai__is_night_theme">Install as a dark theme</string>
+    <string name="settings__theme__ai__check" comment="Button label">Check</string>
+    <string name="settings__theme__ai__apply" comment="Button label">Install and use</string>
+    <string name="settings__theme__ai__stylesheet_valid" comment="Toast">The stylesheet is valid</string>
+    <string name="settings__theme__ai__installed" comment="Toast">Theme installed and selected</string>
+    <string name="toast__autocorrect_enabled">Autocorrect enabled</string>
+    <string name="toast__autocorrect_disabled">Autocorrect disabled</string>
     <string name="settings__dictionary__title" comment="Title of the User dictionaries screen">User dictionaries</string>
     <string name="pref__dictionary__enable_system_user_dictionary__label" comment="Preference title">Enable system user dictionary</string>
     <string name="pref__dictionary__enable_system_user_dictionary__summary" comment="Preference summary">Suggest words stored in the system user dictionary</string>
@@ -513,6 +585,10 @@
     <string name="pref__dictionary__enable_internal_user_dictionary__summary" comment="Preference summary">Suggest words stored in the internal user dictionary</string>
     <string name="pref__dictionary__manage_floris_user_dictionary__label" comment="Preference title">Manage internal user dictionary</string>
     <string name="pref__dictionary__manage_floris_user_dictionary__summary" comment="Preference summary">Add, view, and remove entries for the internal user dictionary</string>
+    <string name="pref__dictionary__group_learned_data__label" comment="Preference group title">Learned typing data</string>
+    <string name="pref__dictionary__clear_learned_data__label" comment="Preference title">Clear learned word predictions</string>
+    <string name="pref__dictionary__clear_learned_data__summary" comment="Preference summary">Forgets the word pairs learned from your typing that power next-word predictions</string>
+    <string name="pref__dictionary__clear_learned_data__dialog_message">This deletes the on-device data used to predict your next word based on your typing history. Your dictionaries and manually added user dictionary entries are not affected. This action cannot be undone.</string>
     <string name="settings__udm__title_floris" comment="Title of the User Dictionary Manager activity for internal">Internal user dictionary</string>
     <string name="settings__udm__title_system" comment="Title of the User Dictionary Manager activity for system">System user dictionary</string>
     <string name="settings__udm__no_words_in_dictionary" comment="String to show if no words are present in the dictionary">This user dictionary does not contain any words.</string>
@@ -553,6 +629,8 @@
     <string name="pref__gestures__swipe_down__label" comment="Preference title">Swipe down</string>
     <string name="pref__gestures__swipe_left__label" comment="Preference title">Swipe left</string>
     <string name="pref__gestures__swipe_right__label" comment="Preference title">Swipe right</string>
+    <string name="pref__gestures__space_bar_swipe_language_switch__label" comment="Preference title">Switch language by swiping the space bar</string>
+    <string name="pref__gestures__space_bar_swipe_language_switch__summary">Swipe left/right on the space bar to switch to the previous/next enabled keyboard language</string>
     <string name="pref__gestures__space_bar_swipe_up__label" comment="Preference title">Space bar swipe up</string>
     <string name="pref__gestures__space_bar_swipe_left__label" comment="Preference title">Space bar swipe left</string>
     <string name="pref__gestures__space_bar_swipe_right__label" comment="Preference title">Space bar swipe right</string>

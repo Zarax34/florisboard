@@ -17,9 +17,11 @@
 package dev.patrickgold.florisboard.ime.keyboard
 
 import android.content.Context
+import android.content.Intent
 import android.icu.lang.UCharacter
 import android.view.KeyEvent
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
@@ -54,6 +56,9 @@ import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboardCache
+import dev.patrickgold.florisboard.ime.translation.TranslationManager
+import dev.patrickgold.florisboard.ime.voice.VoiceInputMode
+import dev.patrickgold.florisboard.ime.voice.VoicePermissionActivity
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
@@ -62,6 +67,8 @@ import dev.patrickgold.florisboard.lib.uppercase
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
+import dev.patrickgold.florisboard.translationManager
+import dev.patrickgold.florisboard.voiceInputManager
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
@@ -73,6 +80,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.AndroidKeyguardManager
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.android.showLongToastSync
@@ -91,6 +99,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private val extensionManager by context.extensionManager()
     private val nlpManager by context.nlpManager()
     private val subtypeManager by context.subtypeManager()
+    private val translationManager by context.translationManager()
+    private val voiceInputManager by context.voiceInputManager()
+
+    /** True while a push-to-talk dictation started by the currently held microphone key is running. */
+    private var isPushToTalkActive = false
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     val layoutManager = LayoutManager(context)
@@ -282,13 +295,20 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
     }
 
-    fun commitCandidate(candidate: SuggestionCandidate) {
+    /**
+     * Commits the given [candidate] to the editor.
+     *
+     * @param isAutoCommit True if this commit was not requested by the user but decided automatically (an
+     *  auto-correction). Such a commit can be undone with a single backspace, see
+     *  [EditorInstance.revertAutoCorrection].
+     */
+    fun commitCandidate(candidate: SuggestionCandidate, isAutoCommit: Boolean = false) {
         scope.launch {
             candidate.sourceProvider?.notifySuggestionAccepted(subtypeManager.activeSubtype, candidate)
         }
         when (candidate) {
             is ClipboardSuggestionCandidate -> editorInstance.commitClipboardItem(candidate.clipboardItem)
-            else -> editorInstance.commitCompletion(candidate)
+            else -> editorInstance.commitCompletion(candidate, isAutoCorrection = isAutoCommit)
         }
     }
 
@@ -424,6 +444,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             it.isManualSelectionModeEnd = false
         }
         revertPreviouslyAcceptedCandidate()
+        // A backspace directly after a word was auto-corrected undoes that correction instead of deleting a
+        // character, so the user gets the word they actually typed back.
+        if (editorInstance.revertAutoCorrection()) {
+            return
+        }
         editorInstance.deleteBackwards(unit)
     }
 
@@ -536,7 +561,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      */
     fun handleHardwareKeyboardSpace() {
         val candidate = nlpManager.getAutoCommitCandidate()
-        candidate?.let { commitCandidate(it) }
+        candidate?.let { commitCandidate(it, isAutoCommit = true) }
         // Skip handling changing to characters keyboard and double space periods
         // TODO: this is whether we commit space after selecting candidate. Should be determined by SuggestionProvider
         if (!subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace &&
@@ -551,7 +576,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      */
     private fun handleSpace(data: KeyData) {
         val candidate = nlpManager.getAutoCommitCandidate()
-        candidate?.let { commitCandidate(it) }
+        candidate?.let { commitCandidate(it, isAutoCommit = true) }
         if (prefs.keyboard.spaceBarSwitchesToCharacters.get()) {
             when (activeState.keyboardMode) {
                 KeyboardMode.NUMERIC_ADVANCED,
@@ -605,11 +630,210 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     /**
      * Handles a [KeyCode.TOGGLE_AUTOCORRECT] event.
      */
-    private fun handleToggleAutocorrect() {
-        lastToastReference.get()?.cancel()
-        lastToastReference = WeakReference(
-            appContext.showLongToastSync("Autocorrect toggle is a placeholder and not yet implemented")
+    private suspend fun handleToggleAutocorrect() {
+        val isEnabled = !prefs.correction.autoCorrectEnabled.get()
+        prefs.correction.autoCorrectEnabled.set(isEnabled)
+        showToast(
+            if (isEnabled) R.string.toast__autocorrect_enabled else R.string.toast__autocorrect_disabled
         )
+    }
+
+    /**
+     * Handles a [KeyCode.TRANSLATE] event: opens the translation bar so the user can pick which language to
+     * translate into. The actual translation happens in [translateInto] once a language is picked.
+     */
+    private fun handleTranslate() {
+        if (activeState.isTranslationBarVisible) {
+            activeState.isTranslationBarVisible = false
+            return
+        }
+        if (translationSourceText().isBlank()) {
+            showToast(R.string.translation__error_nothing_to_translate)
+            return
+        }
+        activeState.isTranslationBarVisible = true
+    }
+
+    /**
+     * Returns the text the translation action would operate on: the current selection, or the whole text of
+     * the field when nothing is selected.
+     */
+    private fun translationSourceText(): String {
+        val content = editorInstance.activeContent
+        return if (content.selection.isSelectionMode) content.selectedText else content.text
+    }
+
+    /** The language the translation action treats as the source, resolving the "follow keyboard" setting. */
+    fun activeTranslationSourceLanguage(): String {
+        val pref = prefs.translation.sourceLanguage.get()
+        return if (pref == TranslationManager.SOURCE_LANGUAGE_SUBTYPE) {
+            subtypeManager.activeSubtype.primaryLocale.language
+        } else {
+            pref
+        }
+    }
+
+    /**
+     * Translates the current selection - or the whole text of the field if nothing is selected - into
+     * [targetLanguage] and replaces it in place. Also remembers [targetLanguage] as the new default target.
+     */
+    fun translateInto(targetLanguage: String) {
+        activeState.isTranslationBarVisible = false
+        val content = editorInstance.activeContent
+        val hasSelection = content.selection.isSelectionMode
+        val text = if (hasSelection) content.selectedText else content.text
+        if (text.isBlank()) {
+            showToast(R.string.translation__error_nothing_to_translate)
+            return
+        }
+        val sourceLanguage = activeTranslationSourceLanguage()
+        if (sourceLanguage == targetLanguage) {
+            showToast(R.string.translation__error_same_language)
+            return
+        }
+        showToast(R.string.translation__translating)
+        scope.launch {
+            prefs.translation.targetLanguage.set(targetLanguage)
+            translationManager.translate(text, sourceLanguage, targetLanguage)
+                .onSuccess { translated ->
+                    if (translated == text) return@onSuccess
+                    withContext(Dispatchers.Main) {
+                        if (!hasSelection) {
+                            editorInstance.performClipboardSelectAll()
+                        }
+                        editorInstance.commitText(translated)
+                    }
+                }
+                .onFailure {
+                    showToast(R.string.translation__error_failed)
+                }
+        }
+    }
+
+    /** Whether the microphone key should dictate only while it is held down. */
+    private fun isPushToTalk(): Boolean {
+        return prefs.voiceInput.mode.get() == VoiceInputMode.PUSH_TO_TALK &&
+            prefs.voiceInput.useBuiltInVoiceInput.get() &&
+            voiceInputManager.isAvailable()
+    }
+
+    /**
+     * Starts dictating as soon as the microphone key goes down, in push-to-talk mode. A missing permission is
+     * not requested here: the dialog would steal the touch the user is still holding, so it is left to
+     * [handleVoiceInputUp].
+     */
+    private fun handleVoiceInputDown() {
+        if (!isPushToTalk() || !voiceInputManager.hasPermission()) return
+        isPushToTalkActive = true
+        startVoiceInput()
+    }
+
+    /**
+     * Ends a push-to-talk session when the key is released, keeping what was said. In tap-to-toggle mode this
+     * is where the whole interaction happens instead.
+     */
+    private fun handleVoiceInputUp() {
+        if (isPushToTalk()) {
+            if (isPushToTalkActive) {
+                isPushToTalkActive = false
+                voiceInputManager.stop()
+                return
+            }
+            if (!voiceInputManager.hasPermission()) {
+                // Ask now that the finger is up, and let the user press and hold again afterwards.
+                requestMicrophonePermission(startWhenGranted = false)
+                return
+            }
+        }
+        handleVoiceInput()
+    }
+
+    /**
+     * Treats a cancelled touch (a finger sliding off the key) like a release rather than discarding the
+     * dictation, so a slightly sloppy press does not lose what was already said.
+     */
+    private fun handleVoiceInputCancel() {
+        if (isPushToTalkActive) {
+            isPushToTalkActive = false
+            voiceInputManager.stop()
+        }
+    }
+
+    /**
+     * Handles a [KeyCode.VOICE_INPUT] event. Unless the user opted out, dictation runs inside FlorisBoard
+     * itself so the keyboard stays on screen; only as a fallback (or when no recognizer is installed) do we
+     * hand the input session over to a separate voice IME the way we used to.
+     */
+    private fun handleVoiceInput() {
+        if (!prefs.voiceInput.useBuiltInVoiceInput.get() || !voiceInputManager.isAvailable()) {
+            FlorisImeService.switchToVoiceInputMethod()
+            return
+        }
+        if (voiceInputManager.isActive) {
+            voiceInputManager.stop()
+            return
+        }
+        if (!voiceInputManager.hasPermission()) {
+            requestMicrophonePermission(startWhenGranted = true)
+            return
+        }
+        startVoiceInput()
+    }
+
+    /** Starts dictation, committing each recognized chunk into the editor as it arrives. */
+    fun startVoiceInput() {
+        activeState.isVoiceInputActive = true
+        voiceInputManager.start(subtypeManager.activeSubtype.primaryLocale.languageTag()) { text ->
+            commitVoiceInputText(text)
+        }
+    }
+
+    /** Stops dictation, keeping whatever has already been recognized. */
+    fun stopVoiceInput() {
+        voiceInputManager.stop()
+    }
+
+    /** Aborts dictation and hides the voice bar. */
+    fun cancelVoiceInput() {
+        isPushToTalkActive = false
+        voiceInputManager.cancel()
+        activeState.isVoiceInputActive = false
+    }
+
+    private fun commitVoiceInputText(text: String) {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return
+        val needsLeadingSpace = prefs.voiceInput.autoSpace.get() &&
+            editorInstance.activeContent.textBeforeSelection.lastOrNull()?.isWhitespace() == false
+        editorInstance.commitText(if (needsLeadingSpace) " $trimmed" else trimmed)
+    }
+
+    /**
+     * Launches the tiny proxy activity that asks for the microphone permission, since an IME cannot request
+     * runtime permissions on its own.
+     */
+    private fun requestMicrophonePermission(startWhenGranted: Boolean) {
+        VoicePermissionActivity.onResult = { isGranted ->
+            when {
+                !isGranted -> showToast(R.string.voice_input__error_no_permission)
+                // In push-to-talk mode there is no finger on the key any more once the dialog is gone, so
+                // tell the user to press and hold again instead of recording into nothing.
+                startWhenGranted -> startVoiceInput()
+                else -> showToast(R.string.voice_input__hold_to_talk_again)
+            }
+        }
+        val intent = Intent(appContext, VoicePermissionActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        runCatching { appContext.startActivity(intent) }.onFailure {
+            VoicePermissionActivity.onResult = null
+            showToast(R.string.voice_input__error_no_permission)
+        }
+    }
+
+    private fun showToast(@StringRes id: Int) {
+        lastToastReference.get()?.cancel()
+        lastToastReference = WeakReference(appContext.showLongToastSync(id))
     }
 
     /**
@@ -688,6 +912,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 editorInstance.massSelection.begin()
             }
             KeyCode.SHIFT -> handleShiftDown(data)
+            KeyCode.VOICE_INPUT -> handleVoiceInputDown()
         }
     }
 
@@ -740,7 +965,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.IME_UI_MODE_TEXT -> activeState.imeUiMode = ImeUiMode.TEXT
             KeyCode.IME_UI_MODE_MEDIA -> activeState.imeUiMode = ImeUiMode.MEDIA
             KeyCode.IME_UI_MODE_CLIPBOARD -> activeState.imeUiMode = ImeUiMode.CLIPBOARD
-            KeyCode.VOICE_INPUT -> FlorisImeService.switchToVoiceInputMethod()
+            KeyCode.VOICE_INPUT -> handleVoiceInputUp()
             KeyCode.KANA_SWITCHER -> handleKanaSwitch()
             KeyCode.KANA_HIRA -> handleKanaHira()
             KeyCode.KANA_KATA -> handleKanaKata()
@@ -766,7 +991,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 activeState.isActionsEditorVisible = !activeState.isActionsEditorVisible
             }
             KeyCode.TOGGLE_INCOGNITO_MODE -> scope.launch { handleToggleIncognitoMode() }
-            KeyCode.TOGGLE_AUTOCORRECT -> handleToggleAutocorrect()
+            KeyCode.TOGGLE_AUTOCORRECT -> scope.launch { handleToggleAutocorrect() }
+            KeyCode.TRANSLATE -> handleTranslate()
             KeyCode.UNDO -> editorInstance.performUndo()
             KeyCode.VIEW_CHARACTERS -> activeState.keyboardMode = KeyboardMode.CHARACTERS
             KeyCode.VIEW_NUMERIC -> activeState.keyboardMode = KeyboardMode.NUMERIC
@@ -777,7 +1003,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.VIEW_SYMBOLS2 -> activeState.keyboardMode = KeyboardMode.SYMBOLS2
             else -> {
                 if (activeState.imeUiMode == ImeUiMode.MEDIA) {
-                    nlpManager.getAutoCommitCandidate()?.let { commitCandidate(it) }
+                    nlpManager.getAutoCommitCandidate()?.let { commitCandidate(it, isAutoCommit = true) }
                     editorInstance.commitText(data.asString(isForDisplay = false))
                     return@batchEdit
                 }
@@ -803,7 +1029,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                         KeyType.CHARACTER, KeyType.NUMERIC ->{
                             val text = data.asString(isForDisplay = false)
                             if (!UCharacter.isUAlphabetic(UCharacter.codePointAt(text, 0))) {
-                                nlpManager.getAutoCommitCandidate()?.let { commitCandidate(it) }
+                                nlpManager.getAutoCommitCandidate()?.let { commitCandidate(it, isAutoCommit = true) }
                             }
                             editorInstance.commitChar(text)
                         }
@@ -832,6 +1058,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 editorInstance.massSelection.end()
             }
             KeyCode.SHIFT -> handleShiftCancel()
+            KeyCode.VOICE_INPUT -> handleVoiceInputCancel()
         }
     }
 

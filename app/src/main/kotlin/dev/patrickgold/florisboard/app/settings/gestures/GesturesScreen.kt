@@ -28,6 +28,7 @@ import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.jetpref.datastore.ui.ListPreference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.stringRes
 
@@ -117,6 +118,11 @@ fun GesturesScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__gestures__space_bar_title)) {
+            SwitchPreference(
+                prefs.gestures.spaceBarSwipeLanguageSwitch,
+                title = stringRes(R.string.pref__gestures__space_bar_swipe_language_switch__label),
+                summary = stringRes(R.string.pref__gestures__space_bar_swipe_language_switch__summary),
+            )
             ListPreference(
                 prefs.gestures.spaceBarSwipeUp,
                 title = stringRes(R.string.pref__gestures__space_bar_swipe_up__label),
@@ -126,11 +132,13 @@ fun GesturesScreen() = FlorisScreen {
                 prefs.gestures.spaceBarSwipeLeft,
                 title = stringRes(R.string.pref__gestures__space_bar_swipe_left__label),
                 entries = enumDisplayEntriesOf(SwipeAction::class, "general"),
+                enabledIf = { prefs.gestures.spaceBarSwipeLanguageSwitch isEqualTo false },
             )
             ListPreference(
                 prefs.gestures.spaceBarSwipeRight,
                 title = stringRes(R.string.pref__gestures__space_bar_swipe_right__label),
                 entries = enumDisplayEntriesOf(SwipeAction::class, "general"),
+                enabledIf = { prefs.gestures.spaceBarSwipeLanguageSwitch isEqualTo false },
             )
             ListPreference(
                 prefs.gestures.spaceBarLongPress,
