@@ -34,6 +34,7 @@ import dev.patrickgold.florisboard.ime.media.emoji.EmojiHistory
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSkinTone
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionType
 import dev.patrickgold.florisboard.ime.nlp.SpellingLanguageMode
+import dev.patrickgold.florisboard.ime.voice.VoiceInputMode
 import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.ExtendedActionsPlacement
 import dev.patrickgold.florisboard.ime.smartbar.IncognitoDisplayMode
@@ -533,6 +534,18 @@ private val ENUM_DISPLAY_ENTRIES = mapOf<Pair<KClass<*>, String>, @Composable ()
             )
         }
     },
+    VoiceInputMode::class to DEFAULT to {
+        listPrefEntries {
+            entry(
+                key = VoiceInputMode.TAP_TO_TOGGLE,
+                label = stringRes(R.string.enum__voice_input_mode__tap_to_toggle),
+            )
+            entry(
+                key = VoiceInputMode.PUSH_TO_TALK,
+                label = stringRes(R.string.enum__voice_input_mode__push_to_talk),
+            )
+        }
+    },
     SpellingLanguageMode::class to DEFAULT to {
         listPrefEntries {
             entry(
@@ -740,7 +753,8 @@ fun <V : Any> enumDisplayEntriesOf(
     enumClass: KClass<V>,
     variant: String = DEFAULT,
 ): List<ListPreferenceEntry<V>> {
+    val entries = ENUM_DISPLAY_ENTRIES[enumClass to variant]
+        ?: error("No display entries registered for ${enumClass.simpleName} (variant '$variant')")
     @Suppress("UNCHECKED_CAST")
-    return ENUM_DISPLAY_ENTRIES[enumClass to variant]?.invoke()
-        as List<ListPreferenceEntry<V>>
+    return entries.invoke() as List<ListPreferenceEntry<V>>
 }
