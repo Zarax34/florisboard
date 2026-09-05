@@ -65,7 +65,23 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         private const val MAX_SPELLING_EDIT_DISTANCE = 2
 
         /** Minimum length of a word before it is eligible for silent autocorrect-on-commit. */
-        private const val MIN_AUTOCORRECT_WORD_LENGTH = 3
+        private const val MIN_AUTOCORRECT_WORD_LENGTH = 4
+
+        /** Words at or below this length may only ever be auto-corrected across a single edit. */
+        private const val SHORT_WORD_LENGTH = 5
+
+        /**
+         * How much more frequent the best correction must be than the runner-up to be applied silently. Being
+         * merely closer in edit distance is not enough: "cae" is one edit from both "case" and "care", and
+         * guessing wrong there is worse than leaving the word alone.
+         */
+        private const val AUTOCORRECT_FREQUENCY_RATIO = 2.0
+
+        /** Minimum query length before fuzzy (typo-tolerant) matches are mixed into the suggestions. */
+        private const val MIN_FUZZY_QUERY_LENGTH = 3
+
+        /** How strongly a word that usually follows the previous word is boosted while it is being typed. */
+        private const val BIGRAM_BOOST = 3.0
 
         /** Directory (relative to the app's files dir) the learned bigram data is persisted to. */
         private const val BIGRAM_DIR_NAME = "nlp"
@@ -92,7 +108,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     private val appContext by context.appContext()
     private val prefs by FlorisPreferenceStore
 
-    private val wordDataByLanguage = guardedByLock { mutableMapOf<String, Map<String, Int>>() }
+    private val wordDataByLanguage = guardedByLock { mutableMapOf<String, Dictionary>() }
     private val wordDataSerializer = MapSerializer(String.serializer(), Int.serializer())
 
     private val bigramsByLanguage = guardedByLock { mutableMapOf<String, MutableMap<String, MutableMap<String, Int>>>() }
@@ -115,19 +131,19 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
      * Returns the (possibly empty) frequency dictionary for [language], loading and caching it from assets on
      * first access. An empty map is returned - and cached - for any language without a bundled dictionary asset.
      */
-    private suspend fun loadDictFor(language: String): Map<String, Int> = withContext(Dispatchers.IO) {
+    private suspend fun loadDictFor(language: String): Dictionary = withContext(Dispatchers.IO) {
         wordDataByLanguage.withLock { cache ->
             cache.getOrPut(language) {
                 val assetPath = DICT_ASSET_BY_LANGUAGE[language]
                 if (assetPath == null) {
-                    emptyMap()
+                    Dictionary.EMPTY
                 } else {
                     try {
                         val rawData = appContext.assets.readText(assetPath)
-                        Json.decodeFromString(wordDataSerializer, rawData)
+                        Dictionary(Json.decodeFromString(wordDataSerializer, rawData))
                     } catch (e: Exception) {
                         flogDebug { "Failed to load dictionary '$assetPath' for language '$language': $e" }
-                        emptyMap()
+                        Dictionary.EMPTY
                     }
                 }
             }
@@ -221,22 +237,98 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         return if (tokens.size <= count) tokens else tokens.subList(tokens.size - count, tokens.size)
     }
 
-    /** Finds dictionary words within [limit] edit distance of [normalized], closest and most frequent first. */
+    /**
+     * Finds dictionary words within [limit] edit distance of [normalized], closest and most frequent first.
+     *
+     * Only the length buckets that could possibly be within [limit] are scanned, which is what keeps this
+     * affordable on every keystroke against a dictionary of tens of thousands of words.
+     */
     private fun findCloseCorrections(
-        dict: Map<String, Int>,
+        dict: Dictionary,
         normalized: String,
         limit: Int,
         maxResults: Int,
-    ): List<Pair<String, Int>> {
-        return dict.keys.asSequence()
-            .filter { abs(it.length - normalized.length) <= limit }
-            .mapNotNull { candidate ->
+    ): List<Correction> {
+        val results = mutableListOf<Correction>()
+        for (length in (normalized.length - limit)..(normalized.length + limit)) {
+            val bucket = dict.wordsByLength[length] ?: continue
+            for (candidate in bucket) {
                 val distance = boundedLevenshtein(normalized, candidate, limit)
-                if (distance <= limit) candidate to distance else null
+                if (distance <= limit) {
+                    results.add(
+                        Correction(
+                            word = candidate,
+                            distance = distance,
+                            frequency = dict.frequencies[candidate] ?: 0,
+                            isRepeatSlip = isRepeatedLetterSlip(normalized, candidate),
+                        )
+                    )
+                }
             }
-            .sortedWith(compareBy({ it.second }, { -(dict[it.first] ?: 0) }))
-            .take(maxResults)
-            .toList()
+        }
+        // Equally close candidates are ordered by how likely the mistake is, then by how common the word is.
+        results.sortWith(compareBy({ it.distance }, { !it.isRepeatSlip }, { -it.frequency }))
+        return if (results.size <= maxResults) results else results.subList(0, maxResults)
+    }
+
+    /**
+     * Ranks the dictionary words starting with [query]. Raw frequency alone is a poor ordering: it buries the
+     * short completion the user is most likely reaching for under a longer, more common word. So the score
+     * also favours candidates close in length to what has been typed, and boosts words that the learned
+     * bigram model says usually follow [previousWord].
+     */
+    private fun rankPrefixMatches(
+        dict: Dictionary,
+        query: String,
+        bigramCounts: Map<String, Int>,
+        maxCandidateCount: Int,
+    ): List<ScoredWord> {
+        if (query.isEmpty()) return emptyList()
+        val bucket = dict.wordsByFirstChar[query[0]] ?: return emptyList()
+        val bigramTotal = bigramCounts.values.sum().coerceAtLeast(1)
+        val scored = mutableListOf<ScoredWord>()
+        for (word in bucket) {
+            if (!word.startsWith(query)) continue
+            val frequency = dict.frequencies[word] ?: 0
+            val extraChars = word.length - query.length
+            val lengthFactor = 1.0 / (1.0 + extraChars * 0.18)
+            val bigramFactor = 1.0 + BIGRAM_BOOST * ((bigramCounts[word] ?: 0).toDouble() / bigramTotal)
+            scored.add(ScoredWord(word, frequency, frequency * lengthFactor * bigramFactor))
+        }
+        scored.sortWith(compareByDescending<ScoredWord> { it.score }.thenBy { it.word })
+        return if (scored.size <= maxCandidateCount) scored else scored.subList(0, maxCandidateCount)
+    }
+
+    /**
+     * Decides whether [query] should be silently corrected to a dictionary word when the next separator is
+     * typed, and to which word.
+     *
+     * The bar is deliberately high, because a wrong silent correction is far more annoying than a missing one:
+     *  - the word must be unknown, and long enough that it is unlikely to be an abbreviation or an interjection,
+     *  - it must not be the start of a real word, since the user is probably just not finished typing it,
+     *  - short words may only be corrected across a single edit, and
+     *  - the best correction must be clearly better than the next one, in distance or in frequency.
+     */
+    private fun chooseAutoCorrection(
+        dict: Dictionary,
+        query: String,
+        corrections: List<Correction>,
+    ): String? {
+        if (query.length < MIN_AUTOCORRECT_WORD_LENGTH) return null
+        if (!query.all { it.isLetter() }) return null
+        if (dict.frequencies.containsKey(query)) return null
+        if (dict.hasWordStartingWith(query)) return null
+        val best = corrections.getOrNull(0) ?: return null
+        val runnerUp = corrections.getOrNull(1) ?: return best.word
+        // Clearly closer to what was typed than anything else.
+        if (best.distance < runnerUp.distance) return best.word
+        // Equally close, but only one is explained by a plainly accidental doubled letter.
+        if (best.isRepeatSlip && !runnerUp.isRepeatSlip) return best.word
+        // Otherwise only commit when one of them is decisively the more common word. When several real words
+        // sit one edit away - which is the norm in Arabic, where they often differ only in the last letter -
+        // guessing is worse than leaving the word alone.
+        val isClearlyMoreFrequent = best.frequency >= runnerUp.frequency * AUTOCORRECT_FREQUENCY_RATIO
+        return if (isClearlyMoreFrequent) best.word else null
     }
 
     override suspend fun spell(
@@ -248,19 +340,13 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         allowPossiblyOffensive: Boolean,
         isPrivateSession: Boolean,
     ): SpellingResult {
-        // Kept for manual/debug testing purposes.
-        when (word.lowercase()) {
-            "typo" -> return SpellingResult.typo(arrayOf("typo1", "typo2", "typo3"))
-            "gerror" -> return SpellingResult.grammarError(arrayOf("grammar1", "grammar2", "grammar3"))
-        }
-
         val dict = loadDictFor(subtype.primaryLocale.language)
-        if (dict.isEmpty() || word.isBlank()) {
+        if (dict.frequencies.isEmpty() || word.isBlank()) {
             // No dictionary available for this language (yet) or nothing to check, don't claim anything.
             return SpellingResult.unspecified()
         }
         val normalized = word.lowercase(subtype.primaryLocale.base)
-        if (dict.containsKey(normalized)) {
+        if (dict.frequencies.containsKey(normalized)) {
             return SpellingResult.validWord()
         }
         if (!normalized.all { it.isLetter() }) {
@@ -268,7 +354,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
             return SpellingResult.validWord()
         }
         val candidates = findCloseCorrections(dict, normalized, MAX_SPELLING_EDIT_DISTANCE, maxSuggestionCount)
-            .map { it.first }
+            .map { it.word }
         return if (candidates.isNotEmpty()) {
             // Word is unknown but we found close dictionary matches: flag it as a likely typo.
             SpellingResult.typo(candidates.toTypedArray())
@@ -288,7 +374,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     ): List<SuggestionCandidate> {
         val language = subtype.primaryLocale.language
         val dict = loadDictFor(language)
-        if (dict.isEmpty()) {
+        if (dict.frequencies.isEmpty()) {
             return emptyList()
         }
 
@@ -309,42 +395,52 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         }
 
         val normalizedQuery = query.lowercase(subtype.primaryLocale.base)
-        val prefixMatches = dict.entries.asSequence()
-            .filter { it.key.startsWith(normalizedQuery) }
-            .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
-            .take(maxCandidateCount)
-            .map { it.key to it.value }
-            .toList()
 
-        // Conservative autocorrect: only silently auto-commit when the typed word is unknown, long enough to not
-        // be a plausible short/abbreviation, and has exactly one unambiguous close dictionary correction.
-        var autoCommitWord: String? = null
-        if (!isPrivateSession &&
-            prefs.correction.autoCorrectEnabled.get() &&
-            normalizedQuery.length >= MIN_AUTOCORRECT_WORD_LENGTH &&
-            normalizedQuery.all { it.isLetter() } &&
-            !dict.containsKey(normalizedQuery)
-        ) {
-            val corrections = findCloseCorrections(dict, normalizedQuery, MAX_SPELLING_EDIT_DISTANCE, 2)
-            val best = corrections.getOrNull(0)
-            val runnerUp = corrections.getOrNull(1)
-            if (best != null && (runnerUp == null || best.second < runnerUp.second)) {
-                autoCommitWord = best.first
-            }
+        // What usually follows the word before this one, used to bias the ranking towards words that actually
+        // fit the sentence rather than merely towards common words.
+        val previousWord = extractTrailingWords(content.textBeforeSelection, 1)
+            .lastOrNull()
+            ?.lowercase(subtype.primaryLocale.base)
+        val bigramCounts = if (previousWord != null) {
+            loadBigramsFor(language)[previousWord].orEmpty()
+        } else {
+            emptyMap()
         }
 
-        val candidates = buildList {
-            val autoWord = autoCommitWord
-            if (autoWord != null && prefixMatches.none { it.first == autoWord }) {
-                add(autoWord to (dict[autoWord] ?: 0))
-            }
-            addAll(prefixMatches)
-        }.distinctBy { it.first }.take(maxCandidateCount)
+        val prefixMatches = rankPrefixMatches(dict, normalizedQuery, bigramCounts, maxCandidateCount)
 
-        return candidates.map { (word, freq) ->
+        // A single mistyped letter kills every prefix match, so unless the prefix alone already fills the bar
+        // we look for words that are simply close to what was typed. The same list decides the autocorrect,
+        // so this scan happens at most once per keystroke.
+        val isAutoCorrectEnabled = !isPrivateSession && prefs.correction.autoCorrectEnabled.get()
+        val wantsFuzzy = normalizedQuery.length >= MIN_FUZZY_QUERY_LENGTH &&
+            (isAutoCorrectEnabled || prefixMatches.size < maxCandidateCount)
+        val fuzzyMatches = if (wantsFuzzy) {
+            val limit = if (normalizedQuery.length <= SHORT_WORD_LENGTH) 1 else MAX_SPELLING_EDIT_DISTANCE
+            findCloseCorrections(dict, normalizedQuery, limit, maxCandidateCount)
+        } else {
+            emptyList()
+        }
+
+        val autoCommitWord = if (isAutoCorrectEnabled) {
+            chooseAutoCorrection(dict, normalizedQuery, fuzzyMatches)
+        } else {
+            null
+        }
+
+        val ordered = LinkedHashMap<String, Int>()
+        autoCommitWord?.let { ordered[it] = dict.frequencies[it] ?: 0 }
+        for (match in prefixMatches) {
+            ordered.putIfAbsent(match.word, match.frequency)
+        }
+        for (match in fuzzyMatches) {
+            ordered.putIfAbsent(match.word, match.frequency)
+        }
+
+        return ordered.entries.take(maxCandidateCount).map { (word, frequency) ->
             WordSuggestionCandidate(
                 text = word,
-                confidence = (freq / 255.0).coerceIn(0.0, 1.0),
+                confidence = (frequency.toDouble() / dict.maxFrequency).coerceIn(0.0, 1.0),
                 isEligibleForAutoCommit = word == autoCommitWord,
                 sourceProvider = this,
             )
@@ -366,11 +462,12 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     }
 
     override suspend fun getListOfWords(subtype: Subtype): List<String> {
-        return loadDictFor(subtype.primaryLocale.language).keys.toList()
+        return loadDictFor(subtype.primaryLocale.language).frequencies.keys.toList()
     }
 
     override suspend fun getFrequencyForWord(subtype: Subtype, word: String): Double {
-        return loadDictFor(subtype.primaryLocale.language).getOrDefault(word, 0) / 255.0
+        val dict = loadDictFor(subtype.primaryLocale.language)
+        return (dict.frequencies[word] ?: 0).toDouble() / dict.maxFrequency
     }
 
     override suspend fun destroy() {
@@ -378,6 +475,68 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         // the app process is killed (which will most likely always be the case).
     }
 }
+
+/**
+ * A word-frequency dictionary plus the indices the suggestion engine needs to stay fast.
+ *
+ * [wordsByLength] lets a fuzzy lookup scan only the buckets that could possibly be within the allowed edit
+ * distance, and [sortedWords] makes "is anything in here starting with this?" a binary search rather than a
+ * full scan - both of which run on every keystroke.
+ */
+private class Dictionary(val frequencies: Map<String, Int>) {
+    val wordsByLength: Map<Int, List<String>> = frequencies.keys.groupBy { it.length }
+
+    /** Words grouped by their first character, so a prefix lookup never scans the whole dictionary. */
+    val wordsByFirstChar: Map<Char, List<String>> = frequencies.keys
+        .filter { it.isNotEmpty() }
+        .groupBy { it[0] }
+
+    private val sortedWords: List<String> = frequencies.keys.sorted()
+
+    /** The most common word's frequency, used to normalize confidences into 0..1. */
+    val maxFrequency: Int = frequencies.values.maxOrNull() ?: 1
+
+    /** Whether any word in this dictionary starts with [prefix]. */
+    fun hasWordStartingWith(prefix: String): Boolean {
+        if (prefix.isEmpty()) return sortedWords.isNotEmpty()
+        var low = 0
+        var high = sortedWords.size
+        while (low < high) {
+            val mid = (low + high) / 2
+            if (sortedWords[mid] < prefix) low = mid + 1 else high = mid
+        }
+        return low < sortedWords.size && sortedWords[low].startsWith(prefix)
+    }
+
+    companion object {
+        val EMPTY = Dictionary(emptyMap())
+    }
+}
+
+/** A dictionary word offered as a correction for a mistyped one. */
+private data class Correction(
+    val word: String,
+    val distance: Int,
+    val frequency: Int,
+    val isRepeatSlip: Boolean,
+)
+
+/**
+ * Whether [typed] is [candidate] with one letter accidentally typed twice, e.g. "كتابب" for "كتاب". Holding a
+ * key a moment too long is one of the most common typing slips there is, and unlike most single-letter
+ * differences it is almost never a different real word - which makes it safe to correct silently.
+ */
+private fun isRepeatedLetterSlip(typed: String, candidate: String): Boolean {
+    if (typed.length != candidate.length + 1) return false
+    for (i in 1 until typed.length) {
+        if (typed[i] != typed[i - 1]) continue
+        if (typed.removeRange(i, i + 1) == candidate) return true
+    }
+    return false
+}
+
+/** A dictionary word ranked as a completion of what is currently being typed. */
+private data class ScoredWord(val word: String, val frequency: Int, val score: Double)
 
 /**
  * Computes the Levenshtein (edit) distance between [a] and [b], stopping early and returning [limit] + 1 as soon
