@@ -21,7 +21,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
+import dev.patrickgold.florisboard.ime.voice.VoiceInputMode
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.jetpref.datastore.ui.ListPreference
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.stringRes
@@ -41,6 +44,12 @@ fun VoiceInputScreen() = FlorisScreen {
             prefs.voiceInput.useBuiltInVoiceInput,
             title = stringRes(R.string.pref__voice_input__use_built_in__label),
             summary = stringRes(R.string.pref__voice_input__use_built_in__summary),
+        )
+        ListPreference(
+            prefs.voiceInput.mode,
+            title = stringRes(R.string.pref__voice_input__mode__label),
+            entries = enumDisplayEntriesOf(VoiceInputMode::class),
+            enabledIf = { prefs.voiceInput.useBuiltInVoiceInput isEqualTo true },
         )
         SwitchPreference(
             prefs.voiceInput.autoSpace,

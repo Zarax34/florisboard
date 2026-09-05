@@ -542,6 +542,10 @@
     <string name="settings__voice_input__info">Voice typing uses the speech recognition service installed on your device. Whether recognition happens on-device or in the cloud is up to that service.</string>
     <string name="pref__voice_input__use_built_in__label" comment="Preference title">Type by voice inside the keyboard</string>
     <string name="pref__voice_input__use_built_in__summary" comment="Preference summary">Keeps FlorisBoard on screen while dictating instead of switching to another keyboard\'s voice input</string>
+    <string name="pref__voice_input__mode__label" comment="Preference title">Microphone key behaviour</string>
+    <string name="enum__voice_input_mode__tap_to_toggle" comment="Enum value label">Tap to start, tap to stop</string>
+    <string name="enum__voice_input_mode__push_to_talk" comment="Enum value label">Hold to talk, release to stop</string>
+    <string name="voice_input__hold_to_talk_again">Microphone allowed. Press and hold the microphone key to dictate.</string>
     <string name="pref__voice_input__auto_space__label" comment="Preference title">Insert a space before dictated text</string>
     <string name="pref__voice_input__auto_space__summary" comment="Preference summary">Adds a space when the text before the cursor does not already end with one</string>
     <string name="voice_input__listening">Listening\u2026</string>

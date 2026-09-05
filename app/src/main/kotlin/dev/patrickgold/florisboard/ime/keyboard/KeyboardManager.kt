@@ -57,6 +57,7 @@ import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboardCache
 import dev.patrickgold.florisboard.ime.translation.TranslationManager
+import dev.patrickgold.florisboard.ime.voice.VoiceInputMode
 import dev.patrickgold.florisboard.ime.voice.VoicePermissionActivity
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogError
@@ -100,6 +101,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private val subtypeManager by context.subtypeManager()
     private val translationManager by context.translationManager()
     private val voiceInputManager by context.voiceInputManager()
+
+    /** True while a push-to-talk dictation started by the currently held microphone key is running. */
+    private var isPushToTalkActive = false
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     val layoutManager = LayoutManager(context)
@@ -706,6 +710,55 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
     }
 
+    /** Whether the microphone key should dictate only while it is held down. */
+    private fun isPushToTalk(): Boolean {
+        return prefs.voiceInput.mode.get() == VoiceInputMode.PUSH_TO_TALK &&
+            prefs.voiceInput.useBuiltInVoiceInput.get() &&
+            voiceInputManager.isAvailable()
+    }
+
+    /**
+     * Starts dictating as soon as the microphone key goes down, in push-to-talk mode. A missing permission is
+     * not requested here: the dialog would steal the touch the user is still holding, so it is left to
+     * [handleVoiceInputUp].
+     */
+    private fun handleVoiceInputDown() {
+        if (!isPushToTalk() || !voiceInputManager.hasPermission()) return
+        isPushToTalkActive = true
+        startVoiceInput()
+    }
+
+    /**
+     * Ends a push-to-talk session when the key is released, keeping what was said. In tap-to-toggle mode this
+     * is where the whole interaction happens instead.
+     */
+    private fun handleVoiceInputUp() {
+        if (isPushToTalk()) {
+            if (isPushToTalkActive) {
+                isPushToTalkActive = false
+                voiceInputManager.stop()
+                return
+            }
+            if (!voiceInputManager.hasPermission()) {
+                // Ask now that the finger is up, and let the user press and hold again afterwards.
+                requestMicrophonePermission(startWhenGranted = false)
+                return
+            }
+        }
+        handleVoiceInput()
+    }
+
+    /**
+     * Treats a cancelled touch (a finger sliding off the key) like a release rather than discarding the
+     * dictation, so a slightly sloppy press does not lose what was already said.
+     */
+    private fun handleVoiceInputCancel() {
+        if (isPushToTalkActive) {
+            isPushToTalkActive = false
+            voiceInputManager.stop()
+        }
+    }
+
     /**
      * Handles a [KeyCode.VOICE_INPUT] event. Unless the user opted out, dictation runs inside FlorisBoard
      * itself so the keyboard stays on screen; only as a fallback (or when no recognizer is installed) do we
@@ -721,7 +774,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             return
         }
         if (!voiceInputManager.hasPermission()) {
-            requestMicrophonePermission()
+            requestMicrophonePermission(startWhenGranted = true)
             return
         }
         startVoiceInput()
@@ -742,6 +795,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
 
     /** Aborts dictation and hides the voice bar. */
     fun cancelVoiceInput() {
+        isPushToTalkActive = false
         voiceInputManager.cancel()
         activeState.isVoiceInputActive = false
     }
@@ -758,12 +812,14 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * Launches the tiny proxy activity that asks for the microphone permission, since an IME cannot request
      * runtime permissions on its own.
      */
-    private fun requestMicrophonePermission() {
+    private fun requestMicrophonePermission(startWhenGranted: Boolean) {
         VoicePermissionActivity.onResult = { isGranted ->
-            if (isGranted) {
-                startVoiceInput()
-            } else {
-                showToast(R.string.voice_input__error_no_permission)
+            when {
+                !isGranted -> showToast(R.string.voice_input__error_no_permission)
+                // In push-to-talk mode there is no finger on the key any more once the dialog is gone, so
+                // tell the user to press and hold again instead of recording into nothing.
+                startWhenGranted -> startVoiceInput()
+                else -> showToast(R.string.voice_input__hold_to_talk_again)
             }
         }
         val intent = Intent(appContext, VoicePermissionActivity::class.java).apply {
@@ -856,6 +912,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 editorInstance.massSelection.begin()
             }
             KeyCode.SHIFT -> handleShiftDown(data)
+            KeyCode.VOICE_INPUT -> handleVoiceInputDown()
         }
     }
 
@@ -908,7 +965,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.IME_UI_MODE_TEXT -> activeState.imeUiMode = ImeUiMode.TEXT
             KeyCode.IME_UI_MODE_MEDIA -> activeState.imeUiMode = ImeUiMode.MEDIA
             KeyCode.IME_UI_MODE_CLIPBOARD -> activeState.imeUiMode = ImeUiMode.CLIPBOARD
-            KeyCode.VOICE_INPUT -> handleVoiceInput()
+            KeyCode.VOICE_INPUT -> handleVoiceInputUp()
             KeyCode.KANA_SWITCHER -> handleKanaSwitch()
             KeyCode.KANA_HIRA -> handleKanaHira()
             KeyCode.KANA_KATA -> handleKanaKata()
@@ -1001,6 +1058,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 editorInstance.massSelection.end()
             }
             KeyCode.SHIFT -> handleShiftCancel()
+            KeyCode.VOICE_INPUT -> handleVoiceInputCancel()
         }
     }
 

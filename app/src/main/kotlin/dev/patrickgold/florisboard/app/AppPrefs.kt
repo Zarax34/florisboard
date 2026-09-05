@@ -54,6 +54,7 @@ import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.ime.theme.extCoreTheme
 import dev.patrickgold.florisboard.ime.translation.TranslationManager
+import dev.patrickgold.florisboard.ime.voice.VoiceInputMode
 import dev.patrickgold.florisboard.ime.window.ImeWindowConfig
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.lib.util.VersionName
@@ -697,6 +698,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         val useBuiltInVoiceInput = boolean(
             key = "voice_input__use_built_in",
             default = true,
+        )
+        val mode = enum(
+            key = "voice_input__mode",
+            default = VoiceInputMode.TAP_TO_TOGGLE,
         )
         val autoSpace = boolean(
             key = "voice_input__auto_space",
