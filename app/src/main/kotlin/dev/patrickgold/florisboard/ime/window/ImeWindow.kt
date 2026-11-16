@@ -23,12 +23,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.mandatorySystemGestures
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
@@ -57,6 +62,7 @@ import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.roundToIntRect
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.devtools.DevtoolsOverlay
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardInputLayout
@@ -67,6 +73,7 @@ import dev.patrickgold.florisboard.ime.sheet.BottomSheetWindow
 import dev.patrickgold.florisboard.ime.text.TextInputLayout
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.delay
 import org.florisboard.lib.compose.ProvideActualLayoutDirection
 import org.florisboard.lib.compose.conditional
@@ -191,15 +198,37 @@ private fun ImeInnerWindow() {
     val windowController = LocalWindowController.current
 
     val keyboardManager by context.keyboardManager()
+    val prefs by FlorisPreferenceStore
 
     val state by keyboardManager.activeState.collectAsState()
     val windowSpec by windowController.activeWindowSpec.collectAsState()
+    val avoidSystemGestureArea by prefs.keyboard.avoidSystemGestureArea.collectAsState()
+    val blockSystemGestures by prefs.keyboard.blockSystemGestures.collectAsState()
 
     ProvideActualLayoutDirection {
         val layoutDirection = LocalLayoutDirection.current
         LaunchedEffect(layoutDirection) {
             keyboardManager.activeState.layoutDirection = layoutDirection
         }
+    }
+
+    // On devices using gesture navigation, the OS reserves a thin strip on the left/right screen edges for the
+    // back gesture. Insetting the keyboard content by that (non-excludable) area keeps every key's touch target
+    // clear of the strip, so an edge swipe reaches the system instead of typing the outermost key. This resolves
+    // to zero on devices using 2/3-button navigation.
+    val gestureAreaModifier = if (avoidSystemGestureArea) {
+        Modifier.padding(WindowInsets.mandatorySystemGestures.only(WindowInsetsSides.Horizontal).asPaddingValues())
+    } else {
+        Modifier
+    }
+
+    // Claiming the whole IME area via `systemGestureExclusion()` stops the system's edge-swipe navigation from
+    // working over the keyboard - the keyboard receives those touches and types instead. Users who navigate by
+    // gestures generally want the opposite, so this is opt-in.
+    val gestureExclusionModifier = if (blockSystemGestures) {
+        Modifier.systemGestureExclusion()
+    } else {
+        Modifier
     }
 
     SnyggBox(
@@ -210,7 +239,8 @@ private fun ImeInnerWindow() {
             .ifIsInstance<ImeWindowProps.Fixed>(windowSpec.props) { props ->
                 Modifier
                     .safeDrawingPadding()
-                    .systemGestureExclusion()
+                    .then(gestureExclusionModifier)
+                    .then(gestureAreaModifier)
                     .padding(
                         start = props.paddingLeft.coerceAtLeast(0.dp),
                         end = props.paddingRight.coerceAtLeast(0.dp),
@@ -218,7 +248,7 @@ private fun ImeInnerWindow() {
                     )
             }
             .ifIsInstance<ImeWindowProps.Floating>(windowSpec.props) {
-                Modifier.systemGestureExclusion()
+                Modifier.then(gestureExclusionModifier).then(gestureAreaModifier)
             },
         allowClip = false,
     ) {

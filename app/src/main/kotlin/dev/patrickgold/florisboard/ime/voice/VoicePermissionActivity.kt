@@ -17,31 +17,43 @@
 package dev.patrickgold.florisboard.ime.voice
 
 import android.Manifest
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import dev.patrickgold.florisboard.R
-import org.florisboard.lib.android.showShortToastSync
 
-/** Invisible activity that asks for the microphone permission, which an input method service can't do itself. */
+/**
+ * A borderless, invisible activity whose only job is to ask for the microphone permission on behalf of the
+ * keyboard. An input method service has no activity of its own and therefore cannot request runtime
+ * permissions directly, so the keyboard starts this activity, which immediately shows the system dialog and
+ * finishes again once the user has answered.
+ */
 class VoicePermissionActivity : ComponentActivity() {
     companion object {
-        fun launch(context: Context) {
-            context.startActivity(
-                Intent(context, VoicePermissionActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            )
-        }
+        /**
+         * Invoked exactly once with the user's answer, then cleared again. The keyboard sets this right
+         * before starting the activity so it can begin dictating as soon as the permission is granted,
+         * instead of making the user tap the microphone key a second time.
+         */
+        var onResult: ((Boolean) -> Unit)? = null
     }
 
-    private val requestPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        showShortToastSync(if (granted) R.string.voice_input__permission_granted else R.string.voice_input__permission_denied)
+    private val requestPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        val callback = onResult
+        onResult = null
+        callback?.invoke(isGranted)
         finish()
+        overridePendingTransitionCompat()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) requestPermission.launch(Manifest.permission.RECORD_AUDIO)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun overridePendingTransitionCompat() {
+        overridePendingTransition(0, 0)
     }
 }

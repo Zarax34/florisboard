@@ -59,6 +59,7 @@ fun SnyggText(
     ProvideSnyggStyle(elementName, attributes, selector) { style ->
         Text(
             modifier = modifier
+                .snyggTransform(style)
                 .snyggMargin(style)
                 .snyggShadow(style)
                 .snyggBorder(style)

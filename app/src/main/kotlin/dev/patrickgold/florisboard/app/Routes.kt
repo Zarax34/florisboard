@@ -68,6 +68,9 @@ import dev.patrickgold.florisboard.app.settings.keyboard.KeyboardScreen
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreen
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreenAction
 import dev.patrickgold.florisboard.app.settings.localization.LocalizationScreen
+import dev.patrickgold.florisboard.app.settings.translation.TranslationScreen
+import dev.patrickgold.florisboard.app.settings.theme.AiThemeScreen
+import dev.patrickgold.florisboard.app.settings.voice.VoiceInputScreen
 import dev.patrickgold.florisboard.app.settings.localization.SelectLocaleScreen
 import dev.patrickgold.florisboard.app.settings.localization.SubtypeEditorScreen
 import dev.patrickgold.florisboard.app.settings.media.MediaScreen
@@ -161,6 +164,18 @@ object Routes {
         @Serializable
         @Deeplink("settings/dictionary")
         object Dictionary
+
+        @Serializable
+        @Deeplink("settings/translation")
+        object Translation
+
+        @Serializable
+        @Deeplink("settings/voice-input")
+        object VoiceInput
+
+        @Serializable
+        @Deeplink("settings/theme/ai")
+        object AiTheme
 
         @Serializable
         @Deeplink("settings/dictionary/user-dictionary")
@@ -314,6 +329,9 @@ object Routes {
             composableWithDeepLink(Settings.VoiceModels::class) { VoiceModelsScreen() }
 
             composableWithDeepLink(Settings.Dictionary::class) { DictionaryScreen() }
+            composableWithDeepLink(Settings.Translation::class) { TranslationScreen() }
+            composableWithDeepLink(Settings.VoiceInput::class) { VoiceInputScreen() }
+            composableWithDeepLink(Settings.AiTheme::class) { AiThemeScreen() }
             composableWithDeepLink(Settings.UserDictionary::class) { navBackStack ->
                 val payload = navBackStack.toRoute<Settings.UserDictionary>()
                 UserDictionaryScreen(payload.type)

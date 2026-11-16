@@ -1,0 +1,53 @@
+[
+  [
+    {"code": 1633, "label": "١", "type": "numeric", "popup": {"main": {"code": 49, "label": "1"}, "relevant": [{"code": 8321, "label": "₁"}, {"code": 8528, "label": "⅐"}, {"code": 8539, "label": "⅛"}, {"code": 8529, "label": "⅑"}, {"code": 8530, "label": "⅒"}, {"code": 8543, "label": "⅟"}, {"code": 185, "label": "¹"}, {"code": 189, "label": "½"}, {"code": 8531, "label": "⅓"}, {"code": 188, "label": "¼"}, {"code": 8533, "label": "⅕"}, {"code": 8537, "label": "⅙"}]}},
+    {"code": 1634, "label": "٢", "type": "numeric", "popup": {"main": {"code": 50, "label": "2"}, "relevant": [{"code": 8322, "label": "₂"}, {"code": 178, "label": "²"}, {"code": 8532, "label": "⅔"}, {"code": 8534, "label": "⅖"}]}},
+    {"code": 1635, "label": "٣", "type": "numeric", "popup": {"main": {"code": 51, "label": "3"}, "relevant": [{"code": 190, "label": "¾"}, {"code": 8535, "label": "⅗"}, {"code": 8540, "label": "⅜"}, {"code": 8323, "label": "₃"}, {"code": 179, "label": "³"}]}},
+    {"code": 1636, "label": "٤", "type": "numeric", "popup": {"main": {"code": 52, "label": "4"}, "relevant": [{"code": 8324, "label": "₄"}, {"code": 8308, "label": "⁴"}, {"code": 8536, "label": "⅘"}]}},
+    {"code": 1637, "label": "٥", "type": "numeric", "popup": {"main": {"code": 53, "label": "5"}, "relevant": [{"code": 8538, "label": "⅚"}, {"code": 8325, "label": "₅"}, {"code": 8309, "label": "⁵"}, {"code": 8541, "label": "⅝"}]}},
+    {"code": 1638, "label": "٦", "type": "numeric", "popup": {"main": {"code": 54, "label": "6"}, "relevant": [{"code": 8326, "label": "₆"}, {"code": 8310, "label": "⁶"}]}},
+    {"code": 1639, "label": "٧", "type": "numeric", "popup": {"main": {"code": 55, "label": "7"}, "relevant": [{"code": 8542, "label": "⅞"}, {"code": 8327, "label": "₇"}, {"code": 8311, "label": "⁷"}]}},
+    {"code": 1640, "label": "٨", "type": "numeric", "popup": {"main": {"code": 56, "label": "8"}, "relevant": [{"code": 8328, "label": "₈"}, {"code": 8312, "label": "⁸"}]}},
+    {"code": 1641, "label": "٩", "type": "numeric", "popup": {"main": {"code": 57, "label": "9"}, "relevant": [{"code": 8329, "label": "₉"}, {"code": 8313, "label": "⁹"}]}},
+    {"code": 1632, "label": "٠", "type": "numeric", "popup": {"main": {"code": 48, "label": "0"}, "relevant": [{"code": 8709, "label": "∅"}, {"code": 8319, "label": "ⁿ"}, {"code": 8304, "label": "⁰"}, {"code": 8585, "label": "↉"}, {"code": 8320, "label": "₀"}]}}
+  ],
+  [
+    {"code": 1590, "label": "ض"},
+    {"code": 1589, "label": "ص"},
+    {"code": 1579, "label": "ث"},
+    {"code": 1602, "label": "ق"},
+    {"code": 1601, "label": "ف"},
+    {"code": 1594, "label": "غ"},
+    {"code": 1593, "label": "ع"},
+    {"code": 1607, "label": "ه"},
+    {"code": 1582, "label": "خ"},
+    {"code": 1581, "label": "ح"},
+    {"code": 1580, "label": "ج"},
+    {"code": 1583, "label": "د"}
+  ],
+  [
+    {"code": 1588, "label": "ش"},
+    {"code": 1587, "label": "س"},
+    {"code": 1610, "label": "ي"},
+    {"code": 1576, "label": "ب"},
+    {"code": 1604, "label": "ل"},
+    {"code": 1575, "label": "ا"},
+    {"code": 1578, "label": "ت"},
+    {"code": 1606, "label": "ن"},
+    {"code": 1605, "label": "م"},
+    {"code": 1603, "label": "ك"},
+    {"code": 1591, "label": "ط"}
+  ],
+  [
+    {"code": 1574, "label": "ئ"},
+    {"code": 1569, "label": "ء"},
+    {"code": 1572, "label": "ؤ"},
+    {"code": 1585, "label": "ر"},
+    {"$": "multi_text_key", "codePoints": [1604, 1575], "label": "لا"},
+    {"code": 1609, "label": "ى"},
+    {"code": 1577, "label": "ة"},
+    {"code": 1608, "label": "و"},
+    {"code": 1586, "label": "ز"},
+    {"code": 1592, "label": "ظ"}
+  ]
+]

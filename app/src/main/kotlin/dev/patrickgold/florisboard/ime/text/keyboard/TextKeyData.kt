@@ -150,6 +150,7 @@ data class TextKeyData(
                 TOGGLE_INCOGNITO_MODE,
                 TOGGLE_AUTOCORRECT,
                 TOGGLE_DEV_TOOLBAR,
+                TRANSLATE,
             ) + CODE_TOOLS
         }
 
@@ -564,6 +565,12 @@ data class TextKeyData(
                 CODE_INSERT_TIMESTAMP,
             )
         }
+        /** Predefined key data for [KeyCode.TRANSLATE] */
+        val TRANSLATE = TextKeyData(
+            type = KeyType.FUNCTION,
+            code = KeyCode.TRANSLATE,
+            label = "translate",
+        )
     }
 }
 

@@ -152,7 +152,31 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         } catch (e: IOException) {
             emptyMap()
         }
-        return LanguageData(WordPredictor(WordDictionary(words), model, NextWordTable(nextWords)), model, modelFile)
+        val data = LanguageData(WordPredictor(WordDictionary(words), model, NextWordTable(nextWords)), model, modelFile)
+        if (migrateOldBigrams(language, model)) save(data)
+        return data
+    }
+
+    /**
+     * Earlier builds only learned word pairs, in `nlp/bigrams_<language>.json`. Import them once so the user keeps
+     * what the keyboard learned, then keep the old file aside.
+     */
+    private fun migrateOldBigrams(language: String, model: UserWordModel): Boolean {
+        val oldFile = File(modelDir, "bigrams_$language.json")
+        if (!oldFile.isFile) return false
+        try {
+            val bigrams = Json.decodeFromString(NextWordDataSerializer, oldFile.readText())
+            for ((previousWord, nextWords) in bigrams) {
+                for ((word, count) in nextWords) model.learn(word, previousWord, weight = count)
+            }
+            flogInfo { "Imported ${bigrams.size} learned word pairs for '$language' from $oldFile" }
+        } catch (e: SerializationException) {
+            flogError { "Could not import old learned words from $oldFile: $e" }
+        } catch (e: IllegalArgumentException) {
+            flogError { "Could not import old learned words from $oldFile: $e" }
+        }
+        oldFile.renameTo(File(oldFile.path + ".migrated"))
+        return true
     }
 
     private fun save(data: LanguageData) {
@@ -314,6 +338,14 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         keptLiterally.clear()
         data.saveJob?.cancel()
         withContext(Dispatchers.IO) { save(data) }
+    }
+
+    /** Forgets everything learned in every language (the "clear learned data" setting). */
+    suspend fun clearAllLearnedWords() {
+        for (language in learnedLanguages()) clearLearnedWords(language)
+        withContext(Dispatchers.IO) {
+            modelDir.listFiles().orEmpty().filter { it.name.startsWith("bigrams_") }.forEach { it.delete() }
+        }
     }
 
     override suspend fun notifySuggestionAccepted(subtype: Subtype, candidate: SuggestionCandidate) {

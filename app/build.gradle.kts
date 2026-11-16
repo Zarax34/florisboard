@@ -242,6 +242,7 @@ dependencies {
     implementation(libs.vosk.android) { exclude(group = "net.java.dev.jna") }
     implementation("net.java.dev.jna:jna:${libs.versions.jna.get()}@aar")
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.mlkit.translate)
     implementation(libs.mikepenz.aboutlibraries.core)
     implementation(libs.mikepenz.aboutlibraries.compose)
     implementation(libs.patrickgold.compose.tooltip)

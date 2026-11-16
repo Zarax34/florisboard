@@ -54,6 +54,7 @@ fun SnyggSpacer(
     ProvideSnyggStyle(elementName, attributes, selector) { style ->
         Spacer(
             modifier = modifier
+                .snyggTransform(style)
                 .snyggMargin(style)
                 .snyggShadow(style)
                 .snyggBackground(style, default = style.foreground())

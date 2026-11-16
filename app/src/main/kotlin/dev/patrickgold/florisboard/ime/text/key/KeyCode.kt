@@ -109,6 +109,7 @@ object KeyCode {
     const val TOGGLE_ACTIONS_EDITOR =       -243
     const val TOGGLE_INCOGNITO_MODE =       -244
     const val TOGGLE_AUTOCORRECT =          -245
+    const val TRANSLATE =                   -246
 
     const val CODE_TOGGLE_CASE =           -1101
     const val CODE_BASE64_ENCODE =         -1102

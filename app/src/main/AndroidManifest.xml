@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Permission needed for voice typing inside the keyboard (only requested when the mic key is used) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-    <!-- Only used to download offline voice models (Vosk) from alphacephei.com when the user asks for it -->
+    <!-- Only used to download offline voice models (Vosk) and translation language packs when the user asks for it -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <!-- Android 11+ only: Define that FlorisBoard requests to see all apps that
@@ -142,11 +142,14 @@
         <activity
             android:name="dev.patrickgold.florisboard.ime.voice.VoicePermissionActivity"
             android:theme="@style/FlorisAppTheme.Transparent"
+            android:taskAffinity=""
+            android:noHistory="true"
             android:excludeFromRecents="true"
             android:exported="false"/>
         <!-- Encrypted vault for secrets taken out of the clipboard, opened after biometric authentication -->
         <activity
             android:name="dev.patrickgold.florisboard.ime.clipboard.vault.SecretVaultActivity"
+            android:taskAffinity=""
             android:theme="@style/FlorisVaultTheme"
             android:excludeFromRecents="true"
             android:exported="false"/>

@@ -1,0 +1,39 @@
+[
+  [
+    {"code": 49, "label": "1", "type": "numeric"},
+    {"code": 50, "label": "2", "type": "numeric"},
+    {"code": 51, "label": "3", "type": "numeric"},
+    {"code": 52, "label": "4", "type": "numeric"},
+    {"code": 53, "label": "5", "type": "numeric"},
+    {"code": 54, "label": "6", "type": "numeric"},
+    {"code": 55, "label": "7", "type": "numeric"},
+    {"code": 56, "label": "8", "type": "numeric"},
+    {"code": 57, "label": "9", "type": "numeric"},
+    {"code": 48, "label": "0", "type": "numeric"},
+    {"$": "multi_text_key", "codePoints": [1604, 1570], "label": "لآ"}
+  ],
+  [
+    {"code": 64, "label": "@"},
+    {"code": 35, "label": "#"},
+    {"code": 1609, "label": "ى"},
+    {"code": 38, "label": "&"},
+    {"code": 40, "label": "("},
+    {"code": 1571, "label": "أ"},
+    {"code": 41, "label": ")"},
+    {"code": 45, "label": "-"},
+    {"code": 43, "label": "+"},
+    {"code": 34, "label": "\""},
+    {"code": 47, "label": "/"}
+  ],
+  [
+    {"code": 58, "label": ":"},
+    {"code": 1600, "label": "ـ"},
+    {"code": 1711, "label": "گ"},
+    {"code": 1574, "label": "ئ"},
+    {"code": 1569, "label": "ء"},
+    {"code": 1573, "label": "إ"},
+    {"code": 1570, "label": "آ"},
+    {"code": 1572, "label": "ؤ"},
+    {"code": 1616, "label": "◌ِ"}
+  ]
+]

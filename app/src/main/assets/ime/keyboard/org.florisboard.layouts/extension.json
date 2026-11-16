@@ -18,6 +18,41 @@
         "modifier": "org.florisboard.layouts:arabic"
       },
       {
+        "id": "arabic_phonetic",
+        "label": "Arabic (Phonetic)",
+        "authors": [ "zarax34" ],
+        "direction": "rtl",
+        "modifier": "org.florisboard.layouts:arabic"
+      },
+      {
+        "id": "arabic_pc",
+        "label": "Arabic (PC)",
+        "authors": [ "zarax34" ],
+        "direction": "rtl",
+        "modifier": "org.florisboard.layouts:arabic"
+      },
+      {
+        "id": "arabic_rtl",
+        "label": "Arabic (Right-to-left order)",
+        "authors": [ "zarax34" ],
+        "direction": "rtl",
+        "modifier": "org.florisboard.layouts:arabic"
+      },
+      {
+        "id": "arabic_legacy_123",
+        "label": "Arabic (Legacy) ١٢٣",
+        "authors": [ "zarax34" ],
+        "direction": "rtl",
+        "modifier": "org.florisboard.layouts:arabic"
+      },
+      {
+        "id": "arabic_ios",
+        "label": "Arabic (iOS)",
+        "authors": [ "zarax34" ],
+        "direction": "rtl",
+        "modifier": "org.florisboard.layouts:arabic"
+      },
+      {
         "id": "armenian_alt_phonetic",
         "label": "Armenian Alt Phonetic",
         "authors": [ "MikayelB" ],
@@ -761,6 +796,18 @@
         "authors": [ "waelwindows" ],
         "direction": "ltr",
         "modifier": "org.florisboard.layouts:cjk"
+      },
+      {
+        "id": "arabic_ios",
+        "label": "Arabic (iOS hints)",
+        "authors": [ "zarax34" ],
+        "direction": "rtl"
+      },
+      {
+        "id": "arabic_hints",
+        "label": "Arabic (hints)",
+        "authors": [ "zarax34" ],
+        "direction": "rtl"
       },
       {
         "id": "eastern",

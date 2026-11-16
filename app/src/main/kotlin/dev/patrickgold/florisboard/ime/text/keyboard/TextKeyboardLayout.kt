@@ -80,6 +80,7 @@ import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.ime.window.LocalWindowController
 import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.florisboard.lib.FlorisRect
 import dev.patrickgold.florisboard.lib.Pointer
 import dev.patrickgold.florisboard.lib.PointerMap
@@ -389,12 +390,16 @@ private fun TextKeyButton(
 }
 
 @Suppress("unused_parameter")
+/** Swipe distance on the space bar that switches the language: 4 units = the swipe distance threshold. */
+private const val LANGUAGE_SWITCH_SWIPE_UNITS = 4
+
 private class TextKeyboardLayoutController(
     context: Context,
 ) : SwipeGesture.Listener, GlideTypingGesture.Listener {
     private val prefs by FlorisPreferenceStore
     private val editorInstance by context.editorInstance()
     private val keyboardManager by context.keyboardManager()
+    private val subtypeManager by context.subtypeManager()
 
     private val inputEventDispatcher get() = keyboardManager.inputEventDispatcher
     private val inputFeedbackController get() = FlorisImeService.inputFeedbackController()
@@ -630,6 +635,11 @@ private class TextKeyboardLayoutController(
                     onTouchCancelInternal(event, pointer)
                     onTouchDownInternal(event, pointer)
                 }
+            } else if (initialKey.computedData.code == KeyCode.SPACE || initialKey.computedData.code == KeyCode.CJK_SPACE) {
+                // The space bar doubles as a swipe-gesture surface (cursor move / language switch). Keep it as the
+                // pressed/active key for the whole gesture instead of hopping onto whichever key the finger
+                // currently hovers over, which would otherwise flicker-press neighboring keys mid-swipe before the
+                // swipe gesture is recognized (see SwipeGesture.Detector's distance/velocity thresholds).
             } else {
                 if ((event.getX(pointer.index) < activeKey.visibleBounds.left - 0.1f * activeKey.visibleBounds.width)
                     || (event.getX(pointer.index) > activeKey.visibleBounds.right + 0.1f * activeKey.visibleBounds.width)
@@ -829,14 +839,32 @@ private class TextKeyboardLayoutController(
         }
     }
 
+    /**
+     * Switches the language as soon as the swipe on the space bar is long enough, once per swipe. Switching only
+     * on release would depend on the finger still moving fast at that moment, and people slow down before
+     * lifting it, so swipes got lost.
+     */
+    private fun switchSubtypeOnce(pointer: TouchPointer, event: SwipeGesture.Event, action: SwipeAction): Boolean {
+        if (!pointer.hasSwitchedSubtype && abs(event.absUnitCountX) >= LANGUAGE_SWITCH_SWIPE_UNITS) {
+            pointer.hasSwitchedSubtype = true
+            keyboardManager.executeSwipeAction(action)
+        }
+        return true
+    }
+
     private fun handleSpaceSwipe(event: SwipeGesture.Event): Boolean {
         val pointer = pointerMap.findById(event.pointerId) ?: return false
+
+        // With a single language there is nothing to switch to, so the swipe keeps moving the cursor
+        val languageSwitchOnSwipe = prefs.gestures.spaceBarSwipeLanguageSwitch.get() && subtypeManager.subtypes.size > 1
 
         return when (event.type) {
             SwipeGesture.Type.TOUCH_MOVE -> when (event.direction) {
                 SwipeGesture.Direction.LEFT -> {
                     val action = prefs.gestures.spaceBarSwipeLeft.get()
-                    if (action == SwipeAction.MOVE_CURSOR_LEFT) {
+                    if (languageSwitchOnSwipe) {
+                        switchSubtypeOnce(pointer, event, SwipeAction.SWITCH_TO_PREV_SUBTYPE)
+                    } else if (action == SwipeAction.MOVE_CURSOR_LEFT) {
                         abs(event.relUnitCountX).let {
                             val count = if (!pointer.hasTriggeredGestureMove) it - 1 else it
                             if (count > 0) {
@@ -855,7 +883,9 @@ private class TextKeyboardLayoutController(
                 }
                 SwipeGesture.Direction.RIGHT -> {
                     val action = prefs.gestures.spaceBarSwipeRight.get()
-                    if (action == SwipeAction.MOVE_CURSOR_RIGHT) {
+                    if (languageSwitchOnSwipe) {
+                        switchSubtypeOnce(pointer, event, SwipeAction.SWITCH_TO_NEXT_SUBTYPE)
+                    } else if (action == SwipeAction.MOVE_CURSOR_RIGHT) {
                         abs(event.relUnitCountX).let {
                             val count = if (!pointer.hasTriggeredGestureMove) it - 1 else it
                             if (count > 0) {
@@ -876,33 +906,43 @@ private class TextKeyboardLayoutController(
             }
             SwipeGesture.Type.TOUCH_UP -> when (event.direction) {
                 SwipeGesture.Direction.LEFT -> {
-                    prefs.gestures.spaceBarSwipeLeft.get().let {
-                        when {
-                            it == SwipeAction.NO_ACTION -> {
-                                false
-                            }
-                            it != SwipeAction.MOVE_CURSOR_LEFT -> {
-                                keyboardManager.executeSwipeAction(it)
-                                true
-                            }
-                            else -> {
-                                false
+                    if (languageSwitchOnSwipe) {
+                        if (!pointer.hasSwitchedSubtype) keyboardManager.executeSwipeAction(SwipeAction.SWITCH_TO_PREV_SUBTYPE)
+                        true
+                    } else {
+                        prefs.gestures.spaceBarSwipeLeft.get().let {
+                            when {
+                                it == SwipeAction.NO_ACTION -> {
+                                    false
+                                }
+                                it != SwipeAction.MOVE_CURSOR_LEFT -> {
+                                    keyboardManager.executeSwipeAction(it)
+                                    true
+                                }
+                                else -> {
+                                    false
+                                }
                             }
                         }
                     }
                 }
                 SwipeGesture.Direction.RIGHT -> {
-                    prefs.gestures.spaceBarSwipeRight.get().let {
-                        when {
-                            it == SwipeAction.NO_ACTION -> {
-                                false
-                            }
-                            it != SwipeAction.MOVE_CURSOR_RIGHT -> {
-                                keyboardManager.executeSwipeAction(it)
-                                true
-                            }
-                            else -> {
-                                false
+                    if (languageSwitchOnSwipe) {
+                        if (!pointer.hasSwitchedSubtype) keyboardManager.executeSwipeAction(SwipeAction.SWITCH_TO_NEXT_SUBTYPE)
+                        true
+                    } else {
+                        prefs.gestures.spaceBarSwipeRight.get().let {
+                            when {
+                                it == SwipeAction.NO_ACTION -> {
+                                    false
+                                }
+                                it != SwipeAction.MOVE_CURSOR_RIGHT -> {
+                                    keyboardManager.executeSwipeAction(it)
+                                    true
+                                }
+                                else -> {
+                                    false
+                                }
                             }
                         }
                     }
@@ -989,6 +1029,7 @@ private class TextKeyboardLayoutController(
         var hasTriggeredGestureMove: Boolean = false
         var hasTriggeredLongPress: Boolean = false
         var hasTriggeredMassSelection: Boolean = false
+        var hasSwitchedSubtype: Boolean = false
         var pressedKeyInfo: InputEventDispatcher.PressedKeyInfo? = null
 
         override fun reset() {
@@ -998,6 +1039,7 @@ private class TextKeyboardLayoutController(
             hasTriggeredGestureMove = false
             hasTriggeredLongPress = false
             hasTriggeredMassSelection = false
+            hasSwitchedSubtype = false
             pressedKeyInfo = null
         }
 

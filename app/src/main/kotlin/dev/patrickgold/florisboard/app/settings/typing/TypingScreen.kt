@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Contacts
-import androidx.compose.material.icons.filled.KeyboardVoice
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.SpaceBar
 import androidx.compose.material3.Card
@@ -65,8 +64,9 @@ fun TypingScreen() = FlorisScreen {
         FlorisErrorCard(
             modifier = Modifier.padding(8.dp),
             text = """
-                Suggestions (except system autofill) and spell checking are not available in this release. All
-                preferences in the "Corrections" group are properly implemented though.
+                Suggestions and spell checking currently have a bundled dictionary for English and Arabic only;
+                other languages will not show word suggestions or spell-check corrections yet. All preferences in
+                the "Corrections" group are properly implemented for every language though.
             """.trimIndent().replace('\n', ' '),
         )
 
@@ -186,15 +186,6 @@ fun TypingScreen() = FlorisScreen {
                 icon = Icons.AutoMirrored.Filled.LibraryBooks,
                 title = stringRes(R.string.settings__dictionary__title),
                 onClick = { navController.navigate(Routes.Settings.Dictionary) },
-            )
-        }
-
-        PreferenceGroup(title = stringRes(R.string.settings__voice_models__group)) {
-            Preference(
-                icon = Icons.Default.KeyboardVoice,
-                title = stringRes(R.string.settings__voice_models__title),
-                summary = stringRes(R.string.pref__typing__voice_models__summary),
-                onClick = { navController.navigate(Routes.Settings.VoiceModels) },
             )
         }
     }

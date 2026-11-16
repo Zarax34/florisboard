@@ -1,0 +1,49 @@
+{
+  "$": "ime.extension.theme",
+  "meta": {
+    "id": "org.florisboard.themes.devices",
+    "version": "0.1.0",
+    "title": "Device-style themes",
+    "description": "Themes that mimic the look of the stock iPhone, Samsung One UI and light pebble-style keyboards",
+    "maintainers": [ "zarax34" ],
+    "license": "apache-2.0"
+  },
+  "themes": [
+    {
+      "id": "ios_day",
+      "label": "iPhone (Light)",
+      "authors": [ "zarax34" ],
+      "isNight": false
+    },
+    {
+      "id": "ios_night",
+      "label": "iPhone (Dark)",
+      "authors": [ "zarax34" ],
+      "isNight": true
+    },
+    {
+      "id": "oneui_day",
+      "label": "Samsung One UI (Light)",
+      "authors": [ "zarax34" ],
+      "isNight": false
+    },
+    {
+      "id": "oneui_night",
+      "label": "Samsung One UI (Dark)",
+      "authors": [ "zarax34" ],
+      "isNight": true
+    },
+    {
+      "id": "pebble_day",
+      "label": "Pebble (Light)",
+      "authors": [ "zarax34" ],
+      "isNight": false
+    },
+    {
+      "id": "pebble_night",
+      "label": "Pebble (Dark)",
+      "authors": [ "zarax34" ],
+      "isNight": true
+    }
+  ]
+}
