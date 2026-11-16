@@ -23,18 +23,29 @@
     { "code":  1606, "label": "ن" },
     { "code":  1605, "label": "م" },
     { "code":  1603, "label": "ك" },
-    { "code":  1591, "label": "ط" }
+    { "code":  1577, "label": "ة" }
   ],
   [
-    { "code":  1584, "label": "ذ" },
-    { "code":  1569, "label": "ء" },
-    { "code":  1572, "label": "ؤ" },
-    { "code":  1585, "label": "ر" },
-    { "code":  1609, "label": "ى" },
-    { "code":  1577, "label": "ة" },
-    { "code":  1608, "label": "و" },
-    { "code":  1586, "label": "ز" },
+    { "code":  1563, "label": "؛" },
     { "code":  1592, "label": "ظ" },
-    { "code":  1583, "label": "د" }
+    { "code":  1591, "label": "ط" },
+    { "code":  1584, "label": "ذ" },
+    { "code":  1583, "label": "د" },
+    { "code":  1586, "label": "ز" },
+    { "code":  1585, "label": "ر" },
+    { "code":  1608, "label": "و" },
+    { "code":  1612, "label": "◌ٌ", "popup": {
+      "relevant": [
+        { "code": 1614, "label": "◌َ" },
+        { "code": 1611, "label": "◌ً" },
+        { "code": 1615, "label": "◌ُ" },
+        { "code": 1612, "label": "◌ٌ" },
+        { "code": 1616, "label": "◌ِ" },
+        { "code": 1613, "label": "◌ٍ" },
+        { "code": 1617, "label": "◌ّ" },
+        { "code": 1618, "label": "◌ْ" },
+        { "code": 1600, "label": "ـ" }
+      ]
+    } }
   ]
 ]

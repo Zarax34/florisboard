@@ -13,6 +13,14 @@
       {
         "id": "arabic",
         "label": "Arabic",
+        "authors": [ "HeiWiper", "zarax34" ],
+        "direction": "rtl",
+        "modifier": "org.florisboard.layouts:arabic_swiftkey",
+        "hints": "org.florisboard.layouts:arabic_swiftkey_hints"
+      },
+      {
+        "id": "arabic_classic",
+        "label": "Arabic (Classic)",
         "authors": [ "HeiWiper" ],
         "direction": "rtl",
         "modifier": "org.florisboard.layouts:arabic"
@@ -548,6 +556,12 @@
         "direction": "rtl"
       },
       {
+        "id": "arabic_swiftkey",
+        "label": "Arabic (emoji key, no language key)",
+        "authors": [ "zarax34" ],
+        "direction": "rtl"
+      },
+      {
         "id": "bengali_unijoy",
         "label": "Unijoy",
         "authors": [ "RHJihan" ],
@@ -800,6 +814,12 @@
       {
         "id": "arabic_ios",
         "label": "Arabic (iOS hints)",
+        "authors": [ "zarax34" ],
+        "direction": "rtl"
+      },
+      {
+        "id": "arabic_swiftkey_hints",
+        "label": "Arabic (key hints)",
         "authors": [ "zarax34" ],
         "direction": "rtl"
       },

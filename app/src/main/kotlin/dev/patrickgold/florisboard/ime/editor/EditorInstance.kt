@@ -48,6 +48,7 @@ import org.florisboard.lib.android.showShortToastSync
 class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     companion object {
         private const val SPACE = " "
+        private const val SPACE_SWAPPING_PUNCTUATION = ".,?!:;؟،؛"
     }
 
     private val prefs by FlorisPreferenceStore
@@ -70,6 +71,9 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
      * committed.
      */
     private var pendingAutoCorrection: Pair<String, String>? = null
+
+    /** Cursor position right after the space [commitCompletion] put behind a picked suggestion, -1 if none. */
+    private var completionSpaceEnd = -1
 
     private fun currentInputConnection() = FlorisImeService.currentInputConnection()
 
@@ -216,9 +220,14 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         if (char.isNotEmpty() && char.all { it.isLetter() }) {
             pendingAutoCorrection = null
         }
+        // Punctuation right after a picked suggestion swaps places with its space: "word " + "." -> "word. "
+        val selection = activeContent.selection
+        val isSwapSpace = char.length == 1 && char[0] in SPACE_SWAPPING_PUNCTUATION &&
+            selection.isCursorMode && selection.start == completionSpaceEnd
+        completionSpaceEnd = -1
         val isInsertAutoSpaceBeforeChar = shouldInsertAutoSpaceBefore(char)
-        val isInsertAutoSpaceAfterChar = shouldInsertAutoSpaceAfter(char)
-        val isDeletePreviousSpace = isInsertAutoSpaceAfterChar && autoSpace.isActive
+        val isInsertAutoSpaceAfterChar = shouldInsertAutoSpaceAfter(char) || isSwapSpace
+        val isDeletePreviousSpace = (isInsertAutoSpaceAfterChar && autoSpace.isActive) || isSwapSpace
         if (isInsertAutoSpaceAfterChar) {
             autoSpace.setActive()
         } else {
@@ -272,22 +281,32 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         val text = candidate.text.toString()
         if (text.isEmpty() || activeInfo.isRawInputEditor) return false
         val content = activeContent
+        // A picked suggestion gets a real space after it (unless one is already there), so the cursor is ready for
+        // the next word and next-word predictions show up right away. See commitChar for punctuation after it.
+        val trailingSpace = if (!isAutoCorrection && !content.textAfterSelection.startsWith(SPACE)) SPACE else ""
+        completionSpaceEnd = -1
         return if (content.composing.isValid) {
             // Only an auto-correction is revertible: the user did not ask for this replacement, so a backspace
             // right afterwards should put their original word back instead of deleting a character.
             pendingAutoCorrection = content.composingText
                 .takeIf { isAutoCorrection && it.isNotEmpty() && it != text }
                 ?.let { text to it }
-            phantomSpace.setActive(showComposingRegion = false, candidate = candidate)
-            super.finalizeComposingText(text)
+            if (trailingSpace.isEmpty()) {
+                phantomSpace.setActive(showComposingRegion = false, candidate = candidate)
+            } else {
+                completionSpaceEnd = content.composing.end + text.length + 1 - content.composingText.length
+            }
+            super.finalizeComposingText(text + trailingSpace)
         } else {
             val isPhantomSpaceActive = phantomSpace.determine(text)
-            phantomSpace.setActive(showComposingRegion = false, candidate = candidate)
-            return if (isPhantomSpaceActive) {
-                super.commitText("$SPACE$text")
+            val leadingSpace = if (isPhantomSpaceActive) SPACE else ""
+            if (trailingSpace.isEmpty()) {
+                phantomSpace.setActive(showComposingRegion = false, candidate = candidate)
             } else {
-                super.commitText(text)
-            }.also {
+                phantomSpace.setInactive()
+                completionSpaceEnd = content.selection.start + leadingSpace.length + text.length + 1
+            }
+            return super.commitText(leadingSpace + text + trailingSpace).also {
                 // handled in finalizeComposingText if content.composing.isValid
                 updateLastCommitPosition()
             }

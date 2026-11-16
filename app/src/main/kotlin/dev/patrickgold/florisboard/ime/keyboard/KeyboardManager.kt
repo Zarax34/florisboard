@@ -76,6 +76,7 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -98,6 +99,9 @@ private val DoubleSpacePeriodMatcher = """([^.!?‽\s]\s)""".toRegex()
 private val BracketPairs = mapOf("(" to ")", "[" to "]", "{" to "}")
 
 private val WordEndingPunctuation =setOf(".", ",", "!", "?", ";", ":", ")", "\"", "،", "؛", "؟")
+
+/** How much text before the cursor dictation looks at to decide capitalization and spacing. */
+private const val VOICE_CONTEXT_CHARS = 64
 
 class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private val prefs by FlorisPreferenceStore
@@ -921,11 +925,20 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         startVoiceInput()
     }
 
-    /** Starts dictation, committing each recognized chunk into the editor as it arrives. */
+    /**
+     * Starts dictation. The words appear in the editor while they are being spoken: every partial result replaces
+     * the previous one in place, and the final result of an utterance fixes it.
+     */
     fun startVoiceInput() {
         activeState.isVoiceInputActive = true
+        liveVoiceText = ""
+        liveVoiceJob?.cancel()
+        liveVoiceJob = scope.launch(Dispatchers.Main) {
+            voiceInputManager.partialText.collect { partial -> showVoiceText(partial) }
+        }
         voiceInputManager.start(subtypeManager.activeSubtype.primaryLocale.languageTag()) { text ->
-            commitVoiceInputText(text)
+            showVoiceText(text)
+            liveVoiceText = "" // the utterance is final, the next one starts after it
         }
     }
 
@@ -938,15 +951,43 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     fun cancelVoiceInput() {
         isPushToTalkActive = false
         voiceInputManager.cancel()
+        liveVoiceJob?.cancel()
         activeState.isVoiceInputActive = false
     }
 
-    private fun commitVoiceInputText(text: String) {
-        if (text.isBlank()) return
-        val before = editorInstance.activeContent.textBeforeSelection
-        val formatted = DictationFormatter.format(text, before)
-        val needsLeadingSpace = prefs.voiceInput.autoSpace.get() && before.lastOrNull()?.isWhitespace() == false
-        editorInstance.commitText(if (needsLeadingSpace) " $formatted" else formatted)
+    /** The current utterance as it was written into the editor, replaced in place while it is still changing. */
+    private var liveVoiceText = ""
+    /** Editor text before the current utterance, so formatting stays stable while the utterance changes. */
+    private var liveVoiceBefore = ""
+    private var liveVoiceJob: Job? = null
+
+    private fun showVoiceText(raw: String) {
+        if (raw.isBlank()) return
+        val ic = FlorisImeService.currentInputConnection() ?: return
+        val previous = liveVoiceText
+        if (previous.isEmpty()) {
+            liveVoiceBefore = ic.getTextBeforeCursor(VOICE_CONTEXT_CHARS, 0)?.toString() ?: ""
+        }
+        val formatted = DictationFormatter.format(raw, liveVoiceBefore)
+        val needsLeadingSpace = prefs.voiceInput.autoSpace.get() &&
+            liveVoiceBefore.lastOrNull()?.isWhitespace() == false
+        val text = if (needsLeadingSpace) " $formatted" else formatted
+        if (text == previous) return
+        // Only replace the previous partial if it is still right before the cursor (the user may have moved it).
+        val isPreviousInPlace = previous.isNotEmpty() &&
+            ic.getTextBeforeCursor(previous.length, 0)?.toString() == previous
+        ic.beginBatchEdit()
+        ic.finishComposingText()
+        when {
+            isPreviousInPlace && text.startsWith(previous) -> ic.commitText(text.substring(previous.length), 1)
+            isPreviousInPlace -> {
+                ic.deleteSurroundingText(previous.length, 0)
+                ic.commitText(text, 1)
+            }
+            else -> ic.commitText(text, 1)
+        }
+        ic.endBatchEdit()
+        liveVoiceText = text
     }
 
     /**

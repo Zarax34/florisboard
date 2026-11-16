@@ -360,7 +360,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
     inner class Glide {
         val enabled = boolean(
             key = "glide__enabled",
-            default = false,
+            default = true,
         )
         val showTrail = boolean(
             key = "glide__show_trail",
@@ -498,7 +498,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val numberRow = boolean(
             key = "keyboard__number_row",
-            default = false,
+            default = true,
         )
         val hintedNumberRowEnabled = boolean(
             key = "keyboard__hinted_number_row_enabled",

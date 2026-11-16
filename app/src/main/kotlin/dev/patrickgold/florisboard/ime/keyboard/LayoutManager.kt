@@ -263,8 +263,22 @@ class LayoutManager(context: Context) {
             }
         }
 
-        // Add hints to keys
-        if (keyboardMode == KeyboardMode.CHARACTERS && computedArrangement.isNotEmpty()) {
+        val hintsLayout = mainLayout?.meta?.hints?.takeIf { keyboardMode == KeyboardMode.CHARACTERS }?.let { hints ->
+            loadLayoutAsync(LTN(LayoutType.SYMBOLS, hints), allowNullLTN = true).await().onFailure {
+                flogWarning { "$keyboardMode - hints - $it" }
+            }.getOrNull()
+        }
+        if (hintsLayout != null) {
+            // The layout brings its own hints: hint row i belongs to main row i
+            val firstMainRow = extensionLayout?.arrangement?.size ?: 0
+            for ((r, hintRow) in hintsLayout.arrangement.withIndex()) {
+                val row = computedArrangement.getOrNull(firstMainRow + r) ?: break
+                val hintKeys = Array(hintRow.size) { TextKey(hintRow[it]) }
+                addRowHints(row, hintKeys, KeyType.CHARACTER)
+                addRowHints(row, hintKeys, KeyType.NUMERIC)
+            }
+        } else if (keyboardMode == KeyboardMode.CHARACTERS && computedArrangement.isNotEmpty()) {
+            // Add hints to keys
             val symbolsComputedArrangement = computeKeyboardAsync(KeyboardMode.SYMBOLS, subtype).await().arrangement
             // number row hint always happens on first row
             if (prefs.keyboard.hintedNumberRowEnabled.get() && symbolsComputedArrangement.isNotEmpty()) {

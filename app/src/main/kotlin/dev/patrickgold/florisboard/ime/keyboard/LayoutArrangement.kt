@@ -29,6 +29,11 @@ data class LayoutArrangementComponent(
     override val authors: List<String>,
     val direction: String,
     val modifier: ExtensionComponentName? = null,
+    /**
+     * A symbols layout used only for the small hint labels (and long-press symbols) of this characters layout,
+     * row by row. Without it the hints come from the subtype's symbols layout.
+     */
+    val hints: ExtensionComponentName? = null,
     val arrangementFile: String? = null,
 ) : ExtensionComponent {
     fun arrangementFile(type: LayoutType) = arrangementFile ?: "layouts/${type.id}/$id.json"
