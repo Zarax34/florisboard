@@ -77,6 +77,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
     val clipboard = Clipboard()
     inner class Clipboard {
+        /** Secrets (API keys, passwords, ...) leave the clipboard after a minute and go to the encrypted vault. */
+        val secretVaultEnabled = boolean(
+            key = "clipboard__secret_vault_enabled",
+            default = true,
+        )
         val useInternalClipboard = boolean(
             key = "clipboard__use_internal_clipboard",
             default = false,
@@ -161,6 +166,14 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         val autoCapitalization = boolean(
             key = "correction__auto_capitalization",
             default = true,
+        )
+        val autoCorrect = boolean(
+            key = "correction__auto_correct",
+            default = true,
+        )
+        val autoPairBrackets = boolean(
+            key = "correction__auto_pair_brackets",
+            default = false,
         )
         val autoSpacePunctuation = boolean(
             key = "correction__auto_space_punctuation",
@@ -654,6 +667,15 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "smartbar__extended_actions_expanded",
             default = false,
         )
+        val devToolbarVisible = boolean(
+            key = "smartbar__dev_toolbar_visible",
+            default = false,
+        )
+        /** In code editors and terminals: show the developer toolbar and turn off auto-correction. */
+        val codeAppProfile = boolean(
+            key = "smartbar__code_app_profile",
+            default = true,
+        )
         val extendedActionsPlacement = enum(
             key = "smartbar__extended_actions_placement",
             default = ExtendedActionsPlacement.ABOVE_CANDIDATES,
@@ -684,7 +706,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val enabled = boolean(
             key = "suggestion__enabled",
-            default = false,
+            default = true,
         )
         val displayMode = enum(
             key = "suggestion__display_mode",
@@ -840,6 +862,15 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                 if (QuickAction.InsertKey(TextKeyData.TOGGLE_RESIZE_MODE) !in newArrangement) {
                     newArrangement = newArrangement.copy(
                         dynamicActions = newArrangement.dynamicActions.plus(QuickAction.InsertKey(TextKeyData.TOGGLE_RESIZE_MODE))
+                    )
+                }
+                // The programmer keys moved into the developer toolbar, reachable from one Smartbar button
+                val codeTools = TextKeyData.CODE_TOOLS.map { QuickAction.InsertKey(it) }.toSet()
+                newArrangement = newArrangement.copy(dynamicActions = newArrangement.dynamicActions - codeTools)
+                val devToolbarToggle = QuickAction.InsertKey(TextKeyData.TOGGLE_DEV_TOOLBAR)
+                if (devToolbarToggle !in newArrangement) {
+                    newArrangement = newArrangement.copy(
+                        dynamicActions = listOf(devToolbarToggle) + newArrangement.dynamicActions
                     )
                 }
                 val json = QuickActionJsonConfig.encodeToString(newArrangement.distinct())

@@ -17,6 +17,7 @@
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.agp.application)
@@ -40,6 +41,23 @@ val projectVersionNameSuffix = projectVersionName.substringAfter("-", "").let { 
         suffix
     }
 }
+
+// App signing: from a local (gitignored) keystore.properties file or, in CI, from environment variables the
+// workflow fills from the GitHub Actions secrets. Without either, builds stay signed with the default debug key.
+val keystoreProperties = Properties().apply {
+    val propertiesFile = rootProject.file("keystore.properties")
+    if (propertiesFile.exists()) {
+        propertiesFile.inputStream().use { load(it) }
+    }
+}
+fun signingProp(propertyKey: String, envVar: String): String? =
+    keystoreProperties.getProperty(propertyKey) ?: System.getenv(envVar)
+val signingStoreFile = signingProp("storeFile", "SIGNING_STORE_FILE")
+val signingStorePassword = signingProp("storePassword", "SIGNING_STORE_PASSWORD")
+val signingKeyAlias = signingProp("keyAlias", "SIGNING_KEY_ALIAS")
+val signingKeyPassword = signingProp("keyPassword", "SIGNING_KEY_PASSWORD")
+val hasSigningConfig = !signingStoreFile.isNullOrEmpty() && rootProject.file(signingStoreFile).exists() &&
+    !signingStorePassword.isNullOrEmpty() && !signingKeyAlias.isNullOrEmpty() && !signingKeyPassword.isNullOrEmpty()
 
 kotlin {
     compilerOptions {
@@ -100,6 +118,17 @@ configure<ApplicationExtension> {
         compose = true
     }
 
+    signingConfigs {
+        if (hasSigningConfig) {
+            create("florisSigning") {
+                storeFile = rootProject.file(signingStoreFile!!)
+                storePassword = signingStorePassword
+                keyAlias = signingKeyAlias
+                keyPassword = signingKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         named("debug") {
             applicationIdSuffix = ".debug"
@@ -107,6 +136,8 @@ configure<ApplicationExtension> {
 
             isDebuggable = true
             isJniDebuggable = false
+
+            if (hasSigningConfig) signingConfig = signingConfigs.getByName("florisSigning")
         }
 
         create("beta") {
@@ -116,6 +147,8 @@ configure<ApplicationExtension> {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             isMinifyEnabled = true
             isShrinkResources = true
+
+            if (hasSigningConfig) signingConfig = signingConfigs.getByName("florisSigning")
         }
 
         named("release") {
@@ -124,6 +157,8 @@ configure<ApplicationExtension> {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             isMinifyEnabled = true
             isShrinkResources = true
+
+            if (hasSigningConfig) signingConfig = signingConfigs.getByName("florisSigning")
         }
 
         create("benchmark") {
@@ -182,6 +217,7 @@ dependencies {
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.activity.ktx)
+    implementation(libs.androidx.biometric)
     implementation(libs.androidx.autofill)
     implementation(libs.androidx.collection.ktx)
     implementation(libs.androidx.compose.material.icons)
@@ -202,6 +238,9 @@ dependencies {
     implementation(libs.cache4k)
     implementation(libs.kotlin.reflect)
     implementation(libs.kotlinx.coroutines)
+    // Fully offline voice typing. JNA must be the Android aar (it carries the native dispatch libraries).
+    implementation(libs.vosk.android) { exclude(group = "net.java.dev.jna") }
+    implementation("net.java.dev.jna:jna:${libs.versions.jna.get()}@aar")
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.mikepenz.aboutlibraries.core)
     implementation(libs.mikepenz.aboutlibraries.compose)

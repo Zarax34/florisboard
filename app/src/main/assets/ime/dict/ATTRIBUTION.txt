@@ -1,0 +1,11 @@
+ar.json
+  Arabic word frequencies derived from "FrequencyWords" by Hermit Dave
+  (https://github.com/hermitdave/FrequencyWords, content/2018/ar/ar_50k.txt),
+  built from OpenSubtitles 2018 (http://opus.nlpl.eu/OpenSubtitles2018.php).
+  Licensed under CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/).
+  Changes: kept Arabic-letter tokens only, counts rescaled to the 120..255 range used by data.json.
+
+en_bigrams.json, ar_bigrams.json
+  Next-word tables counted from the Tatoeba sentence collection (https://tatoeba.org), licensed under
+  CC BY 2.0 FR (https://creativecommons.org/licenses/by/2.0/fr/). Only word pairs where both words are in the
+  base dictionary are kept, at most 6 next words per word.

@@ -55,9 +55,12 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FilterListOff
+import androidx.compose.material.icons.filled.AlternateEmail
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.Numbers
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.ToggleOff
@@ -95,6 +98,7 @@ import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
+import dev.patrickgold.florisboard.ime.clipboard.vault.SecretVaultActivity
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.media.KeyboardLikeButton
 import dev.patrickgold.florisboard.ime.smartbar.AnimationDuration
@@ -150,14 +154,20 @@ fun ClipboardInputLayout(
 
     var isFilterRowShown by remember { mutableStateOf(false) }
     val activeFilterTypes = remember { mutableStateSetOf<ItemType>() }
+    val activeContentKinds = remember { mutableStateSetOf<ClipContentKind>() }
 
     val unfilteredHistory by clipboardManager.historyFlow.collectAsState()
-    val filteredHistory = remember(unfilteredHistory, activeFilterTypes.toSet()) {
-        if (activeFilterTypes.isEmpty()) {
+    val filteredHistory = remember(unfilteredHistory, activeFilterTypes.toSet(), activeContentKinds.toSet()) {
+        if (activeFilterTypes.isEmpty() && activeContentKinds.isEmpty()) {
             unfilteredHistory
         } else {
             unfilteredHistory.all
-                .filter { activeFilterTypes.contains(it.type) }
+                .filter { item ->
+                    item.type in activeFilterTypes ||
+                        (ClipContentKind.SECRET in activeContentKinds && item.isSensitive) ||
+                        (item.type == ItemType.TEXT && activeContentKinds.isNotEmpty() &&
+                            ClipContentKind.detect(item.text.orEmpty()).any { it in activeContentKinds })
+                }
                 .let { ClipboardHistory(it) }
         }
     }
@@ -172,10 +182,11 @@ fun ClipboardInputLayout(
         delay(AnimationDuration.toLong())
         if (!isFilterRowShown) {
             activeFilterTypes.clear()
+            activeContentKinds.clear()
         }
     }
 
-    LaunchedEffect(activeFilterTypes.toSet()) {
+    LaunchedEffect(activeFilterTypes.toSet(), activeContentKinds.toSet()) {
         gridState.scrollToItem(0)
     }
 
@@ -227,6 +238,14 @@ fun ClipboardInputLayout(
                 SnyggIcon(
                     imageVector = Icons.Default.DeleteSweep,
                 )
+            }
+            SnyggIconButton(
+                elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
+                onClick = { SecretVaultActivity.launch(context) },
+                modifier = sizeModifier,
+                enabled = !deviceLocked && !isPopupSurfaceActive(),
+            ) {
+                SnyggIcon(imageVector = Icons.Default.Key)
             }
             SnyggIconButton(
                 elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
@@ -414,45 +433,92 @@ fun ClipboardInputLayout(
                         clickAndSemanticsModifier = Modifier.florisHorizontalScroll(),
                     ) {
                         @Composable
-                        fun FilterChip(
+                        fun BaseFilterChip(
                             imageVector: ImageVector,
                             text: String,
-                            itemType: ItemType,
+                            type: String,
+                            active: Boolean,
+                            onClick: () -> Unit,
                         ) {
-                            val active = activeFilterTypes.contains(itemType)
                             val attributes = remember(active) {
                                 mapOf(
                                     "state" to if (active) "active" else "inactive",
-                                    "type" to itemType.toString().lowercase(),
+                                    "type" to type,
                                 )
                             }
                             SnyggChip(
                                 elementName = FlorisImeUi.ClipboardFilterChip.elementName,
                                 attributes = attributes,
-                                onClick = {
-                                    if (!activeFilterTypes.add(itemType)) {
-                                        activeFilterTypes.remove(itemType)
-                                    }
-                                },
+                                onClick = onClick,
                                 imageVector = imageVector,
                                 text = text,
                             )
                         }
 
-                        FilterChip(
+                        @Composable
+                        fun TypeFilterChip(imageVector: ImageVector, text: String, itemType: ItemType) {
+                            BaseFilterChip(
+                                imageVector = imageVector,
+                                text = text,
+                                type = itemType.toString().lowercase(),
+                                active = itemType in activeFilterTypes,
+                                onClick = {
+                                    if (!activeFilterTypes.add(itemType)) activeFilterTypes.remove(itemType)
+                                },
+                            )
+                        }
+
+                        @Composable
+                        fun KindFilterChip(imageVector: ImageVector, text: String, kinds: Set<ClipContentKind>) {
+                            BaseFilterChip(
+                                imageVector = imageVector,
+                                text = text,
+                                type = kinds.first().toString().lowercase(),
+                                active = activeContentKinds.containsAll(kinds),
+                                onClick = {
+                                    if (activeContentKinds.containsAll(kinds)) {
+                                        activeContentKinds.removeAll(kinds)
+                                    } else {
+                                        activeContentKinds.addAll(kinds)
+                                    }
+                                },
+                            )
+                        }
+
+                        TypeFilterChip(
                             imageVector = Icons.Default.TextFields,
                             text = "Text",
                             itemType = ItemType.TEXT,
                         )
-                        FilterChip(
+                        TypeFilterChip(
                             imageVector = Icons.Default.Image,
                             text = "Images",
                             itemType = ItemType.IMAGE,
                         )
-                        FilterChip(
+                        TypeFilterChip(
                             imageVector = Icons.Default.Movie,
                             text = "Videos",
                             itemType = ItemType.VIDEO,
+                        )
+                        KindFilterChip(
+                            imageVector = Icons.Default.Link,
+                            text = stringRes(R.string.clipboard__filter_links),
+                            kinds = setOf(ClipContentKind.LINK),
+                        )
+                        KindFilterChip(
+                            imageVector = Icons.Default.AlternateEmail,
+                            text = stringRes(R.string.clipboard__filter_emails),
+                            kinds = setOf(ClipContentKind.EMAIL),
+                        )
+                        KindFilterChip(
+                            imageVector = Icons.Default.Numbers,
+                            text = stringRes(R.string.clipboard__filter_numbers),
+                            kinds = setOf(ClipContentKind.NUMBER, ClipContentKind.PHONE),
+                        )
+                        KindFilterChip(
+                            imageVector = Icons.Default.Key,
+                            text = stringRes(R.string.clipboard__filter_secrets),
+                            kinds = setOf(ClipContentKind.SECRET),
                         )
                     }
                 }

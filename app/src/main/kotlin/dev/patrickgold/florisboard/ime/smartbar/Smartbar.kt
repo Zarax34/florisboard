@@ -23,7 +23,9 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.absoluteOffset
@@ -34,6 +36,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -59,9 +62,11 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
+import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickAction
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionButton
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionsRow
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.ToggleOverflowPanelAction
+import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.nlpManager
@@ -102,39 +107,75 @@ fun Smartbar() {
         enter = VerticalEnterTransition,
         exit = VerticalExitTransition,
     ) {
-        when (extendedActionsPlacement) {
-            ExtendedActionsPlacement.ABOVE_CANDIDATES -> {
-                SnyggColumn(FlorisImeUi.Smartbar.elementName) {
-                    SmartbarSecondaryRow()
-                    SmartbarMainRow()
+        Column {
+            when (extendedActionsPlacement) {
+                ExtendedActionsPlacement.ABOVE_CANDIDATES -> {
+                    SnyggColumn(FlorisImeUi.Smartbar.elementName) {
+                        SmartbarSecondaryRow()
+                        SmartbarMainRow()
+                    }
                 }
-            }
 
-            ExtendedActionsPlacement.BELOW_CANDIDATES -> {
-                SnyggColumn(FlorisImeUi.Smartbar.elementName) {
-                    SmartbarMainRow()
-                    SmartbarSecondaryRow()
-                }
-            }
-
-            ExtendedActionsPlacement.OVERLAY_APP_UI -> {
-                SnyggBox(FlorisImeUi.Smartbar.elementName,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(FlorisImeSizing.smartbarHeight),
-                    allowClip = false,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(FlorisImeSizing.smartbarHeight * 2)
-                            .absoluteOffset(y = -FlorisImeSizing.smartbarHeight),
-                        contentAlignment = Alignment.BottomStart,
-                    ) {
+                ExtendedActionsPlacement.BELOW_CANDIDATES -> {
+                    SnyggColumn(FlorisImeUi.Smartbar.elementName) {
+                        SmartbarMainRow()
                         SmartbarSecondaryRow()
                     }
-                    SmartbarMainRow()
                 }
+
+                ExtendedActionsPlacement.OVERLAY_APP_UI -> {
+                    SnyggBox(FlorisImeUi.Smartbar.elementName,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(FlorisImeSizing.smartbarHeight),
+                        allowClip = false,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(FlorisImeSizing.smartbarHeight * 2)
+                                .absoluteOffset(y = -FlorisImeSizing.smartbarHeight),
+                            contentAlignment = Alignment.BottomStart,
+                        ) {
+                            SmartbarSecondaryRow()
+                        }
+                        SmartbarMainRow()
+                    }
+                }
+            }
+            DevToolbarRow()
+        }
+    }
+}
+
+private val DevToolbarActions: List<QuickAction> = buildList {
+    addAll(listOf(TextKeyData.TAB, TextKeyData.ESCAPE, TextKeyData.CTRL).map { QuickAction.InsertKey(it) })
+    addAll(listOf(TextKeyData.ARROW_LEFT, TextKeyData.ARROW_RIGHT, TextKeyData.ARROW_UP, TextKeyData.ARROW_DOWN)
+        .map { QuickAction.InsertKey(it) })
+    addAll(listOf("{", "}", "[", "]", "(", ")", "<", ">", "=", ";", ":", "\"", "'", "`", "/", "\\", "|", "&", "_", "$", "#", "!")
+        .map { QuickAction.InsertText(it) })
+    addAll(TextKeyData.CODE_TOOLS.drop(3).map { QuickAction.InsertKey(it) })
+    addAll(listOf(TextKeyData.CLIPBOARD_SELECT_ALL, TextKeyData.UNDO, TextKeyData.REDO).map { QuickAction.InsertKey(it) })
+}
+
+/** Keys programmers need, toggled by the code button in the Smartbar. Scrolls horizontally. */
+@Composable
+private fun DevToolbarRow() {
+    val context = LocalContext.current
+    val keyboardManager by context.keyboardManager()
+    val evaluator by keyboardManager.activeSmartbarEvaluator.collectAsState()
+
+    AnimatedVisibility(visible = evaluator.state.isDevToolbarVisible, enter = VerticalEnterTransition, exit = VerticalExitTransition) {
+        SnyggRow(
+            FlorisImeUi.SmartbarExtendedActionsRow.elementName,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(FlorisImeSizing.smartbarHeight)
+                .horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            for (action in DevToolbarActions) {
+                QuickActionButton(action, evaluator, modifier = Modifier.fillMaxHeight())
             }
         }
     }

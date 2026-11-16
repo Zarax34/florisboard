@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.KeyboardVoice
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.SpaceBar
 import androidx.compose.material3.Card
@@ -97,6 +98,21 @@ fun TypingScreen() = FlorisScreen {
 
         PreferenceGroup(title = stringRes(R.string.pref__correction__title)) {
             SwitchPreference(
+                prefs.correction.autoCorrect,
+                title = stringRes(R.string.pref__correction__auto_correct__label),
+                summary = stringRes(R.string.pref__correction__auto_correct__summary),
+            )
+            SwitchPreference(
+                prefs.correction.autoPairBrackets,
+                title = stringRes(R.string.pref__correction__auto_pair_brackets__label),
+                summary = stringRes(R.string.pref__correction__auto_pair_brackets__summary),
+            )
+            SwitchPreference(
+                prefs.smartbar.codeAppProfile,
+                title = stringRes(R.string.pref__smartbar__code_app_profile__label),
+                summary = stringRes(R.string.pref__smartbar__code_app_profile__summary),
+            )
+            SwitchPreference(
                 prefs.correction.autoCapitalization,
                 title = stringRes(R.string.pref__correction__auto_capitalization__label),
                 summary = stringRes(R.string.pref__correction__auto_capitalization__summary),
@@ -170,6 +186,15 @@ fun TypingScreen() = FlorisScreen {
                 icon = Icons.AutoMirrored.Filled.LibraryBooks,
                 title = stringRes(R.string.settings__dictionary__title),
                 onClick = { navController.navigate(Routes.Settings.Dictionary) },
+            )
+        }
+
+        PreferenceGroup(title = stringRes(R.string.settings__voice_models__group)) {
+            Preference(
+                icon = Icons.Default.KeyboardVoice,
+                title = stringRes(R.string.settings__voice_models__title),
+                summary = stringRes(R.string.pref__typing__voice_models__summary),
+                onClick = { navController.navigate(Routes.Settings.VoiceModels) },
             )
         }
     }

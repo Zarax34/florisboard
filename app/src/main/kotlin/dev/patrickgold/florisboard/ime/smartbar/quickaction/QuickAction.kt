@@ -98,6 +98,18 @@ fun QuickAction.computeDisplayName(evaluator: ComputingEvaluator): String {
             KeyCode.TOGGLE_INCOGNITO_MODE -> R.string.quick_action__toggle_incognito_mode
             KeyCode.TOGGLE_AUTOCORRECT -> R.string.quick_action__toggle_autocorrect
             KeyCode.VOICE_INPUT -> R.string.quick_action__voice_input
+            KeyCode.TAB -> R.string.quick_action__key_tab
+            KeyCode.TOGGLE_DEV_TOOLBAR -> R.string.quick_action__toggle_dev_toolbar
+            KeyCode.ESCAPE -> R.string.quick_action__key_escape
+            KeyCode.CTRL -> R.string.quick_action__key_ctrl
+            KeyCode.CODE_TOGGLE_CASE -> R.string.quick_action__code_toggle_case
+            KeyCode.CODE_BASE64_ENCODE -> R.string.quick_action__code_base64_encode
+            KeyCode.CODE_BASE64_DECODE -> R.string.quick_action__code_base64_decode
+            KeyCode.CODE_URL_ENCODE -> R.string.quick_action__code_url_encode
+            KeyCode.CODE_URL_DECODE -> R.string.quick_action__code_url_decode
+            KeyCode.CODE_FORMAT_JSON -> R.string.quick_action__code_format_json
+            KeyCode.CODE_INSERT_UUID -> R.string.quick_action__code_insert_uuid
+            KeyCode.CODE_INSERT_TIMESTAMP -> R.string.quick_action__code_insert_timestamp
             KeyCode.IME_HIDE_UI -> R.string.quick_action__ime_hide_ui
             KeyCode.TOGGLE_FLOATING_WINDOW -> R.string.quick_action__floating_window_mode
             // TODO: In the future this will be merged into the resize keyboard panel, for now it is a separate action
@@ -138,6 +150,18 @@ fun QuickAction.computeTooltip(evaluator: ComputingEvaluator): String {
             KeyCode.TOGGLE_INCOGNITO_MODE -> R.string.quick_action__toggle_incognito_mode__tooltip
             KeyCode.TOGGLE_AUTOCORRECT -> R.string.quick_action__toggle_autocorrect__tooltip
             KeyCode.VOICE_INPUT -> R.string.quick_action__voice_input__tooltip
+            KeyCode.TAB -> R.string.quick_action__key_tab__tooltip
+            KeyCode.TOGGLE_DEV_TOOLBAR -> R.string.quick_action__toggle_dev_toolbar__tooltip
+            KeyCode.ESCAPE -> R.string.quick_action__key_escape__tooltip
+            KeyCode.CTRL -> R.string.quick_action__key_ctrl__tooltip
+            KeyCode.CODE_TOGGLE_CASE -> R.string.quick_action__code_toggle_case__tooltip
+            KeyCode.CODE_BASE64_ENCODE -> R.string.quick_action__code_base64_encode__tooltip
+            KeyCode.CODE_BASE64_DECODE -> R.string.quick_action__code_base64_decode__tooltip
+            KeyCode.CODE_URL_ENCODE -> R.string.quick_action__code_url_encode__tooltip
+            KeyCode.CODE_URL_DECODE -> R.string.quick_action__code_url_decode__tooltip
+            KeyCode.CODE_FORMAT_JSON -> R.string.quick_action__code_format_json__tooltip
+            KeyCode.CODE_INSERT_UUID -> R.string.quick_action__code_insert_uuid__tooltip
+            KeyCode.CODE_INSERT_TIMESTAMP -> R.string.quick_action__code_insert_timestamp__tooltip
             KeyCode.IME_HIDE_UI -> R.string.quick_action__ime_hide_ui__tooltip
             KeyCode.TOGGLE_FLOATING_WINDOW -> R.string.quick_action__floating_window_mode__tooltip
             // TODO: In the future this will be merged into the resize keyboard panel, for now it is a separate action

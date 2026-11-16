@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDao
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDatabase
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
+import dev.patrickgold.florisboard.ime.clipboard.vault.SecretVault
 import java.io.Closeable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -60,6 +61,8 @@ class ClipboardManager(
     companion object {
         // 1 minute
         private const val INTERVAL = 60 * 1000L
+        /** How long a secret stays in the clipboard before only the vault has it. */
+        private const val SECRET_CLIPBOARD_LIFETIME_MS = 60 * 1000L
 
         /**
          * Taken from ClipboardDescription.java from the AOSP
@@ -232,6 +235,7 @@ class ClipboardManager(
      * Adds a new item to the clipboard history (if enabled).
      */
     private fun insertOrMoveBeginning(newItem: ClipboardItem) {
+        vaultIfSecret(newItem)
         if (prefs.clipboard.historyEnabled.get()) {
             val historyElement = currentHistory.all.firstOrNull { item ->
                 item.type == ItemType.TEXT && item.text == newItem.text && item.isSensitive == newItem.isSensitive
@@ -247,6 +251,29 @@ class ClipboardManager(
                 )
             } else {
                 insertClip(newItem)
+            }
+        }
+    }
+
+    /**
+     * Secrets go to the encrypted [SecretVault] right away and leave the clipboard (history and system clipboard)
+     * after [SECRET_CLIPBOARD_LIFETIME_MS]. If the vault can't store it (no secure lock screen), nothing is removed,
+     * so a secret is never lost.
+     */
+    private fun vaultIfSecret(item: ClipboardItem) {
+        val text = item.text ?: return
+        if (!SecretVault.shouldVault(prefs.clipboard.secretVaultEnabled.get(), item.type, item.isSensitive, text)) return
+        ioScope.launch {
+            if (!SecretVault.save(appContext, text)) return@launch
+            delay(SECRET_CLIPBOARD_LIFETIME_MS)
+            val copies = currentHistory.all.filter { it.type == ItemType.TEXT && it.text == text && !it.isPinned }
+            if (copies.isNotEmpty()) clipHistoryDao?.delete(copies)
+            withContext(Dispatchers.Main) {
+                if (primaryClip?.text == text) {
+                    updatePrimaryClip(null)
+                } else if (systemClipboardManager.primaryClip?.getItemAt(0)?.text?.toString() == text) {
+                    systemClipboardManager.clearPrimaryClipAnyApi()
+                }
             }
         }
     }

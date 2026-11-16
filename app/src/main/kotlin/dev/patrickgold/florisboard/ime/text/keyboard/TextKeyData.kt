@@ -149,7 +149,8 @@ data class TextKeyData(
                 TOGGLE_ACTIONS_EDITOR,
                 TOGGLE_INCOGNITO_MODE,
                 TOGGLE_AUTOCORRECT,
-            )
+                TOGGLE_DEV_TOOLBAR,
+            ) + CODE_TOOLS
         }
 
         /** Predefined key data for [KeyCode.UNSPECIFIED] */
@@ -531,6 +532,38 @@ data class TextKeyData(
             code = KeyCode.TOGGLE_AUTOCORRECT,
             label = "toggle_autocorrect",
         )
+
+        /** Code tools for programmers, see [dev.patrickgold.florisboard.ime.codetools.CodeTools] */
+        val CODE_TOGGLE_CASE = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.CODE_TOGGLE_CASE, label = "code_toggle_case")
+        val CODE_BASE64_ENCODE = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.CODE_BASE64_ENCODE, label = "code_base64_encode")
+        val CODE_BASE64_DECODE = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.CODE_BASE64_DECODE, label = "code_base64_decode")
+        val CODE_URL_ENCODE = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.CODE_URL_ENCODE, label = "code_url_encode")
+        val CODE_URL_DECODE = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.CODE_URL_DECODE, label = "code_url_decode")
+        val CODE_FORMAT_JSON = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.CODE_FORMAT_JSON, label = "code_format_json")
+        val CODE_INSERT_UUID = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.CODE_INSERT_UUID, label = "code_insert_uuid")
+        val CODE_INSERT_TIMESTAMP = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.CODE_INSERT_TIMESTAMP, label = "code_insert_timestamp")
+
+        /** Shows/hides the developer toolbar below the Smartbar. */
+        val TOGGLE_DEV_TOOLBAR = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.TOGGLE_DEV_TOOLBAR, label = "toggle_dev_toolbar")
+        val TAB = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.TAB, label = "tab")
+        val ESCAPE = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.ESCAPE, label = "esc")
+
+        /** Programmer keys plus the code tools, shown in the developer toolbar. */
+        val CODE_TOOLS by lazy {
+            listOf(
+                TAB,
+                ESCAPE,
+                CTRL,
+                CODE_TOGGLE_CASE,
+                CODE_FORMAT_JSON,
+                CODE_BASE64_ENCODE,
+                CODE_BASE64_DECODE,
+                CODE_URL_ENCODE,
+                CODE_URL_DECODE,
+                CODE_INSERT_UUID,
+                CODE_INSERT_TIMESTAMP,
+            )
+        }
     }
 }
 

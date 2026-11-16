@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vault__title">خزنة الأسرار</string>
+    <string name="vault__auth_subtitle">افتح القفل لرؤية الأسرار التي أُخذت من الحافظة</string>
+    <string name="vault__cancel">إلغاء</string>
+    <string name="vault__unavailable">تحتاج خزنة الأسرار إلى قفل شاشة (رمز PIN أو نمط أو كلمة مرور أو بصمة)</string>
+    <string name="vault__auth_strong_required">افتح القفل بالبصمة أو بقفل الشاشة لفتح الخزنة</string>
+    <string name="vault__key_invalidated">أعاد النظام ضبط مفتاح الخزنة (أُزيل قفل الشاشة)، وتعذّر استرجاع أسرارها</string>
+    <string name="vault__copied">نُسخ، وسيُزال من الحافظة مجددًا بعد دقيقة</string>
+    <string name="vault__copy">نسخ</string>
+    <string name="vault__delete">حذف</string>
+    <string name="vault__delete_all">حذف الكل</string>
+    <string name="vault__delete_all_title">حذف كل الأسرار؟</string>
+    <string name="vault__delete_all_message">سيُحذف كل سر في الخزنة، ولا يمكن التراجع عن ذلك.</string>
+    <string name="vault__empty">لا توجد أسرار بعد. مفاتيح API والرموز وكلمات المرور المنسوخة تُحفظ هنا.</string>
+    <string name="vault__open">فتح خزنة الأسرار</string>
+    <string name="vault__open_summary">الأسرار المنسوخة إلى الحافظة، مشفّرة ومحمية ببصمتك</string>
+    <string name="pref__clipboard__secret_vault__label">نقل الأسرار إلى الخزنة المشفّرة</string>
+    <string name="pref__clipboard__secret_vault__summary">تُشفَّر مفاتيح API والرموز وكلمات المرور في الخزنة فورًا وتُزال من الحافظة بعد دقيقة</string>
+</resources>

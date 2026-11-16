@@ -17,14 +17,17 @@
 package dev.patrickgold.florisboard.app.settings.clipboard
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.clipboard.CLIPBOARD_HISTORY_NUM_GRID_COLUMNS_AUTO
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardSyncBehavior
+import dev.patrickgold.florisboard.ime.clipboard.vault.SecretVaultActivity
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.jetpref.datastore.ui.ListPreference
+import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import org.florisboard.lib.android.AndroidVersion
@@ -38,6 +41,7 @@ fun ClipboardScreen() = FlorisScreen {
     previewFieldVisible = true
 
     content {
+        val context = LocalContext.current
         SwitchPreference(
             prefs.clipboard.useInternalClipboard,
             title = stringRes(R.string.pref__clipboard__use_internal_clipboard__label),
@@ -158,6 +162,19 @@ fun ClipboardScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__clipboard__clear_primary_clip_affects_history_if_unpinned__label),
                 summary = stringRes(R.string.pref__clipboard__clear_primary_clip_affects_history_if_unpinned__summary),
                 enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
+            )
+        }
+
+        PreferenceGroup(title = stringRes(R.string.vault__title)) {
+            SwitchPreference(
+                prefs.clipboard.secretVaultEnabled,
+                title = stringRes(R.string.pref__clipboard__secret_vault__label),
+                summary = stringRes(R.string.pref__clipboard__secret_vault__summary),
+            )
+            Preference(
+                title = stringRes(R.string.vault__open),
+                summary = stringRes(R.string.vault__open_summary),
+                onClick = { SecretVaultActivity.launch(context) },
             )
         }
     }

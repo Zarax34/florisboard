@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vault__title">Secret vault</string>
+    <string name="vault__auth_subtitle">Unlock to see the secrets taken out of the clipboard</string>
+    <string name="vault__cancel">Cancel</string>
+    <string name="vault__unavailable">The secret vault needs a screen lock (PIN, pattern, password or fingerprint)</string>
+    <string name="vault__auth_strong_required">Unlock with your fingerprint or screen lock to open the vault</string>
+    <string name="vault__key_invalidated">The vault key was reset by the system (screen lock removed), its secrets could not be recovered</string>
+    <string name="vault__copied">Copied, it leaves the clipboard again after a minute</string>
+    <string name="vault__copy">Copy</string>
+    <string name="vault__delete">Delete</string>
+    <string name="vault__delete_all">Delete all</string>
+    <string name="vault__delete_all_title">Delete all secrets?</string>
+    <string name="vault__delete_all_message">Every secret in the vault is deleted. This cannot be undone.</string>
+    <string name="vault__empty">No secrets yet. Copied API keys, tokens and passwords land here.</string>
+    <string name="vault__open">Open secret vault</string>
+    <string name="vault__open_summary">Secrets copied to the clipboard, encrypted and protected by your fingerprint</string>
+    <string name="pref__clipboard__secret_vault__label">Move secrets to the encrypted vault</string>
+    <string name="pref__clipboard__secret_vault__summary">API keys, tokens and passwords are encrypted into the vault right away and removed from the clipboard after a minute</string>
+</resources>

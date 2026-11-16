@@ -90,6 +90,18 @@ class DictionaryManager private constructor(context: Context) {
 
     }
 
+    /**
+     * Text expansion: returns the words whose shortcut is exactly [shortcut] (e.g. shortcut "email" -> the user's
+     * email address). Floris dictionary entries come first.
+     */
+    fun queryShortcutExpansions(shortcut: String, locale: FlorisLocale): List<String> {
+        if (shortcut.isBlank()) return emptyList()
+        return buildList {
+            florisUserDictionaryDao()?.queryShortcut(shortcut, locale)?.forEach { add(it.word) }
+            systemUserDictionaryDao()?.queryShortcut(shortcut, locale)?.forEach { add(it.word) }
+        }.distinct()
+    }
+
     fun spell(word: String, locale: FlorisLocale): Boolean {
         val florisDao = florisUserDictionaryDao()
         val systemDao = systemUserDictionaryDao()

@@ -95,6 +95,36 @@
     <string name="quick_action__toggle_autocorrect__tooltip">Toggle autocorrect</string>
     <string name="quick_action__voice_input" comment="Please mind the limited available space for the quick action strings">Voice input</string>
     <string name="quick_action__voice_input__tooltip" comment="IME stands for Input Method Editor and is indirectly equivalent to 'keyboard'.">Open voice input provider</string>
+    <string name="quick_action__code_toggle_case" comment="Please mind the limited available space for the quick action strings">Case</string>
+    <string name="quick_action__code_toggle_case__tooltip">Cycle selected text: camelCase, snake_case, CONSTANT, kebab-case, PascalCase</string>
+    <string name="quick_action__code_base64_encode" comment="Please mind the limited available space for the quick action strings">Base64 enc</string>
+    <string name="quick_action__code_base64_encode__tooltip">Encode selected text as Base64</string>
+    <string name="quick_action__code_base64_decode" comment="Please mind the limited available space for the quick action strings">Base64 dec</string>
+    <string name="quick_action__code_base64_decode__tooltip">Decode selected Base64 text</string>
+    <string name="quick_action__code_url_encode" comment="Please mind the limited available space for the quick action strings">URL enc</string>
+    <string name="quick_action__code_url_encode__tooltip">URL-encode selected text</string>
+    <string name="quick_action__code_url_decode" comment="Please mind the limited available space for the quick action strings">URL dec</string>
+    <string name="quick_action__code_url_decode__tooltip">URL-decode selected text</string>
+    <string name="quick_action__code_format_json" comment="Please mind the limited available space for the quick action strings">JSON</string>
+    <string name="quick_action__code_format_json__tooltip">Pretty-print or minify selected JSON</string>
+    <string name="quick_action__code_insert_uuid" comment="Please mind the limited available space for the quick action strings">UUID</string>
+    <string name="quick_action__code_insert_uuid__tooltip">Insert a random UUID</string>
+    <string name="quick_action__code_insert_timestamp" comment="Please mind the limited available space for the quick action strings">Timestamp</string>
+    <string name="quick_action__code_insert_timestamp__tooltip">Insert the current time (ISO-8601, UTC)</string>
+    <string name="code_tools__select_text_first">Select some text first</string>
+    <string name="code_tools__invalid_input">The selected text is not valid for this tool</string>
+    <string name="autocorrect__toast_enabled">Autocorrect on</string>
+    <string name="autocorrect__toast_disabled">Autocorrect off</string>
+    <string name="voice_input__listening">Listening… tap the mic again to stop</string>
+    <string name="voice_input__downloading_offline_model">Downloading the offline speech pack for this language</string>
+    <string name="voice_input__no_match">Didn\'t catch that, try again</string>
+    <string name="voice_input__error">Voice typing is not available right now</string>
+    <string name="voice_input__permission_granted">Microphone allowed, tap the mic key again</string>
+    <string name="voice_input__permission_denied">Voice typing needs the microphone permission</string>
+    <string name="clipboard__filter_links">Links</string>
+    <string name="clipboard__filter_emails">Emails</string>
+    <string name="clipboard__filter_numbers">Numbers</string>
+    <string name="clipboard__filter_secrets">Secrets</string>
     <string name="quick_action__floating_window_mode" comment="Please mind the limited available space for the quick action strings">Floating</string>
     <string name="quick_action__floating_window_mode__tooltip">Toggle floating keyboard window mode</string>
     <string name="quick_action__one_handed_mode" comment="Please mind the limited available space for the quick action strings">One-handed</string>
@@ -489,6 +519,8 @@
     <string name="pref__correction__title" comment="Preference group title">Corrections</string>
     <string name="pref__correction__auto_capitalization__label" comment="Preference title">Auto-capitalization</string>
     <string name="pref__correction__auto_capitalization__summary" comment="Preference summary">Capitalize words based on the current input context</string>
+    <string name="pref__correction__auto_correct__label">Autocorrect</string>
+    <string name="pref__correction__auto_correct__summary">Fix misspelled words when pressing space. Press backspace right after a correction to undo it. A word you keep typing is learned after a few times.</string>
     <string name="pref__correction__auto_space_punctuation__label" comment="Preference title">Auto-space after punctuation</string>
     <string name="pref__correction__auto_space_punctuation__summary" comment="Preference summary">Automatically insert a space after a punctuation</string>
     <string name="pref__correction__remember_caps_lock_state__label" comment="Preference title">Remember caps lock state</string>
@@ -1160,4 +1192,40 @@
         <item quantity="other">{v} candidates</item>
     </plurals>
 
+    <string name="quick_action__key_tab">Tab</string>
+    <string name="quick_action__key_tab__tooltip">Insert a tab</string>
+    <string name="quick_action__key_escape">Esc</string>
+    <string name="quick_action__key_escape__tooltip">Send the Escape key</string>
+    <string name="quick_action__key_ctrl">Ctrl</string>
+    <string name="quick_action__key_ctrl__tooltip">Ctrl for the next key (e.g. Ctrl+S, Ctrl+F)</string>
+    <string name="pref__correction__auto_pair_brackets__label">Auto-pair brackets</string>
+    <string name="pref__correction__auto_pair_brackets__summary">Typing ( [ or { also inserts the closing bracket, handy for writing code</string>
+    <string name="settings__learned_words__title">Learned words</string>
+    <string name="pref__dictionary__manage_learned_words__summary">View and forget the words the keyboard learned from your typing</string>
+    <string name="settings__learned_words__summary">Every word you type is counted. A word that is not in the dictionary is only suggested after you typed it {count} times, so one-off typos are never memorized.</string>
+    <string name="settings__learned_words__empty">Nothing learned yet.</string>
+    <string name="settings__learned_words__learned">Typed {count} times · learned</string>
+    <string name="settings__learned_words__counted">Typed {count} times</string>
+    <string name="settings__learned_words__clear_title">Forget all learned words?</string>
+    <string name="settings__learned_words__clear_message">Everything the keyboard learned for this language is deleted. This cannot be undone.</string>
+    <string name="settings__voice_models__group">Voice typing</string>
+    <string name="settings__voice_models__title">Offline voice models</string>
+    <string name="pref__typing__voice_models__summary">Import a Vosk model to type by voice without internet</string>
+    <string name="settings__voice_models__summary">With a Vosk model installed for a language, voice typing runs fully on this phone, no internet and no speech service needed. Download a model below (internet is only used for this download), or import a model zip from alphacephei.com/vosk/models. Tap the mic again to stop dictating.</string>
+    <string name="settings__voice_models__empty">No model installed. Voice typing uses the phone\'s speech service.</string>
+    <string name="settings__voice_models__import">Import model (.zip)</string>
+    <string name="settings__voice_models__importing">Importing the model, this can take a minute…</string>
+    <string name="settings__voice_models__import_success">Offline voice model installed for {language}</string>
+    <string name="settings__voice_models__import_failed">Import failed: the file is not a Vosk model zip</string>
+    <string name="quick_action__toggle_dev_toolbar">Developer toolbar</string>
+    <string name="quick_action__toggle_dev_toolbar__tooltip">Show or hide the developer toolbar (Tab, Esc, Ctrl, arrows, code symbols and tools)</string>
+    <string name="settings__voice_models__installed_title">Installed</string>
+    <string name="settings__voice_models__download_title">Download</string>
+    <string name="settings__voice_models__size">{size} MB</string>
+    <string name="settings__voice_models__downloading">Downloading… {percent}%</string>
+    <string name="settings__voice_models__download_failed">Download failed, check the internet connection and try again</string>
+    <string name="settings__voice_models__note_ar_mgb2">Modern Standard Arabic, more accurate</string>
+    <string name="settings__voice_models__note_ar_small">Lighter, trained on Tunisian dialect</string>
+    <string name="pref__smartbar__code_app_profile__label">Developer profile in code apps</string>
+    <string name="pref__smartbar__code_app_profile__summary">In code editors and terminals (Termux, Acode, Spck, ...) open the developer toolbar and turn off auto-correction</string>
 </resources>

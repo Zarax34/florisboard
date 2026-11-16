@@ -33,6 +33,11 @@ fun DictionaryScreen() = FlorisScreen {
     val navController = LocalNavController.current
 
     content {
+        Preference(
+            title = stringRes(R.string.settings__learned_words__title),
+            summary = stringRes(R.string.pref__dictionary__manage_learned_words__summary),
+            onClick = { navController.navigate(Routes.Settings.LearnedWords) },
+        )
         SwitchPreference(
             prefs.dictionary.enableSystemUserDictionary,
             title = stringRes(R.string.pref__dictionary__enable_system_user_dictionary__label),

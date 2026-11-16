@@ -110,6 +110,16 @@ object KeyCode {
     const val TOGGLE_INCOGNITO_MODE =       -244
     const val TOGGLE_AUTOCORRECT =          -245
 
+    const val CODE_TOGGLE_CASE =           -1101
+    const val CODE_BASE64_ENCODE =         -1102
+    const val CODE_BASE64_DECODE =         -1103
+    const val CODE_URL_ENCODE =            -1104
+    const val CODE_URL_DECODE =            -1105
+    const val CODE_FORMAT_JSON =           -1106
+    const val CODE_INSERT_UUID =           -1107
+    const val CODE_INSERT_TIMESTAMP =      -1108
+    const val TOGGLE_DEV_TOOLBAR =         -1109
+
     const val URI_COMPONENT_TLD =           -255
 
     const val SETTINGS =                    -301

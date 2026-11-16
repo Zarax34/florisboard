@@ -59,6 +59,7 @@ import dev.patrickgold.florisboard.app.settings.advanced.PhysicalKeyboardScreen
 import dev.patrickgold.florisboard.app.settings.advanced.RestoreScreen
 import dev.patrickgold.florisboard.app.settings.clipboard.ClipboardScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.DictionaryScreen
+import dev.patrickgold.florisboard.app.settings.dictionary.LearnedWordsScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
 import dev.patrickgold.florisboard.app.settings.gestures.GesturesScreen
@@ -75,6 +76,7 @@ import dev.patrickgold.florisboard.app.settings.theme.ThemeManagerScreen
 import dev.patrickgold.florisboard.app.settings.theme.ThemeManagerScreenAction
 import dev.patrickgold.florisboard.app.settings.theme.ThemeScreen
 import dev.patrickgold.florisboard.app.settings.typing.TypingScreen
+import dev.patrickgold.florisboard.app.settings.typing.VoiceModelsScreen
 import dev.patrickgold.florisboard.app.setup.SetupScreen
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -153,12 +155,20 @@ object Routes {
         object Typing
 
         @Serializable
+        @Deeplink("settings/typing/voice-models")
+        object VoiceModels
+
+        @Serializable
         @Deeplink("settings/dictionary")
         object Dictionary
 
         @Serializable
         @Deeplink("settings/dictionary/user-dictionary")
         data class UserDictionary(val type: UserDictionaryType)
+
+        @Serializable
+        @Deeplink("settings/dictionary/learned-words")
+        object LearnedWords
 
         @Serializable
         @Deeplink("settings/gestures")
@@ -301,12 +311,14 @@ object Routes {
             composableWithDeepLink(Settings.Smartbar::class) { SmartbarScreen() }
 
             composableWithDeepLink(Settings.Typing::class) { TypingScreen() }
+            composableWithDeepLink(Settings.VoiceModels::class) { VoiceModelsScreen() }
 
             composableWithDeepLink(Settings.Dictionary::class) { DictionaryScreen() }
             composableWithDeepLink(Settings.UserDictionary::class) { navBackStack ->
                 val payload = navBackStack.toRoute<Settings.UserDictionary>()
                 UserDictionaryScreen(payload.type)
             }
+            composableWithDeepLink(Settings.LearnedWords::class) { LearnedWordsScreen() }
 
             composableWithDeepLink(Settings.Gestures::class) { GesturesScreen() }
 

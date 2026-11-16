@@ -22,12 +22,22 @@ import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
+import androidx.compose.material.icons.automirrored.filled.KeyboardTab
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.automirrored.outlined.Backspace
+import androidx.compose.material.icons.filled.Abc
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.DataObject
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.LinkOff
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.ContentPasteGo
@@ -138,6 +148,8 @@ fun ComputingEvaluator.computeLabel(data: KeyData): String? {
         data.asString(isForDisplay = true)
     } else {
         when (data.code) {
+            KeyCode.ESCAPE -> "Esc"
+            KeyCode.CTRL -> if (evaluator.state.isCtrlActive) "CTRL •" else "Ctrl"
             KeyCode.PHONE_PAUSE -> evaluator.context()?.getString(R.string.key__phone_pause)
             KeyCode.PHONE_WAIT -> evaluator.context()?.getString(R.string.key__phone_wait)
             KeyCode.SPACE, KeyCode.CJK_SPACE -> {
@@ -229,6 +241,16 @@ fun ComputingEvaluator.computeImageVector(data: KeyData): ImageVector? {
         KeyCode.VOICE_INPUT -> {
             Icons.Default.KeyboardVoice
         }
+        KeyCode.TAB -> Icons.AutoMirrored.Filled.KeyboardTab
+        KeyCode.TOGGLE_DEV_TOOLBAR -> Icons.Default.Code
+        KeyCode.CODE_TOGGLE_CASE -> Icons.Default.Abc
+        KeyCode.CODE_BASE64_ENCODE -> Icons.Default.Lock
+        KeyCode.CODE_BASE64_DECODE -> Icons.Default.LockOpen
+        KeyCode.CODE_URL_ENCODE -> Icons.Default.Link
+        KeyCode.CODE_URL_DECODE -> Icons.Default.LinkOff
+        KeyCode.CODE_FORMAT_JSON -> Icons.Default.DataObject
+        KeyCode.CODE_INSERT_UUID -> Icons.Default.Fingerprint
+        KeyCode.CODE_INSERT_TIMESTAMP -> Icons.Default.Schedule
         KeyCode.IME_HIDE_UI -> {
             Icons.Default.KeyboardHide
         }

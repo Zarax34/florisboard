@@ -472,6 +472,9 @@ class SystemUserDictionaryDatabase(context: Context) : UserDictionaryDatabase {
 
 object UserDictionaryValidation {
     private val WordRegex = """^[^\s;,]+${'$'}""".toRegex()
+    // A word may be a phrase (text shortcut expansion like an address), but no ';' ',' or line breaks, which would
+    // break the combined-list import/export format
+    private val PhraseRegex = """^[^;,\r\n]+${'$'}""".toRegex()
 
     val Word = ValidationRule<String> {
         forKlass = UserDictionaryEntry::class
@@ -480,7 +483,7 @@ object UserDictionaryValidation {
             val str = input.trim()
             when {
                 input.isBlank() -> resultInvalid(error = R.string.settings__udm__dialog__word_error_empty)
-                !str.matches(WordRegex) -> resultInvalid(error = R.string.settings__udm__dialog__word_error_invalid, "regex" to WordRegex)
+                !str.matches(PhraseRegex) -> resultInvalid(error = R.string.settings__udm__dialog__word_error_invalid, "regex" to PhraseRegex)
                 else -> resultValid()
             }
         }

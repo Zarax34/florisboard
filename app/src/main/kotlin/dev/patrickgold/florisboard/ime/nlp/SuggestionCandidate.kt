@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -34,6 +35,19 @@ import dev.patrickgold.florisboard.lib.util.NetworkUtils
  * Interface for a candidate item, which is returned by a suggestion provider and used by the UI logic to render
  * the candidate row.
  */
+/** An expanded text shortcut. [cursorFromEnd] > 0 places the cursor inside the inserted text (snippets). */
+data class ShortcutCandidate(
+    override val text: CharSequence,
+    override val secondaryText: CharSequence?,
+    val cursorFromEnd: Int,
+    override val isEligibleForAutoCommit: Boolean,
+    override val sourceProvider: SuggestionProvider?,
+) : SuggestionCandidate {
+    override val confidence: Double = 1.0
+    override val isEligibleForUserRemoval: Boolean = false
+    override val icon: ImageVector? = null
+}
+
 interface SuggestionCandidate {
     /**
      * Required primary text of a candidate item, must be non-null and non-blank. The value of this property will
@@ -125,6 +139,8 @@ data class ClipboardSuggestionCandidate(
     val clipboardItem: ClipboardItem,
     override val sourceProvider: SuggestionProvider?,
     val context: Context,
+    /** The verification code extracted from a copied message. */
+    val isOneTimeCode: Boolean = false,
 ) : SuggestionCandidate {
     override val text: CharSequence = clipboardItem.displayText(context)
 
@@ -138,6 +154,7 @@ data class ClipboardSuggestionCandidate(
 
     override val icon: ImageVector = when (clipboardItem.type) {
         ItemType.TEXT -> when {
+            isOneTimeCode -> Icons.Default.Password
             NetworkUtils.isEmailAddress(text) -> Icons.Default.Email
             NetworkUtils.isUrl(text) -> Icons.Default.Link
             NetworkUtils.isPhoneNumber(text) -> Icons.Default.Phone

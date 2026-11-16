@@ -94,6 +94,9 @@ open class KeyboardState protected constructor(open var rawValue: ULong) {
         const val F_IS_RTL_LAYOUT_DIRECTION: ULong =        0x08000000u
 
         const val F_IS_SUBTYPE_SELECTION_VISIBLE: ULong =   0x1_0000_0000u
+        const val F_IS_CTRL_ACTIVE: ULong =                 0x2_0000_0000u
+        const val F_IS_CODE_EDITOR: ULong =                 0x4_0000_0000u
+        const val F_IS_DEV_TOOLBAR_VISIBLE: ULong =         0x8_0000_0000u
 
         const val F_DEBUG_SHOW_DRAG_AND_DROP_HELPERS =      0x01_00_00_00_00_00_00_00uL
 
@@ -195,6 +198,20 @@ open class KeyboardState protected constructor(open var rawValue: ULong) {
     var isSubtypeSelectionVisible: Boolean
         get() = getFlag(F_IS_SUBTYPE_SELECTION_VISIBLE)
         set(v) { setFlag(F_IS_SUBTYPE_SELECTION_VISIBLE, v) }
+
+    /** One-shot Ctrl from the smartbar: the next letter or digit key is sent as a Ctrl shortcut. */
+    var isCtrlActive: Boolean
+        get() = getFlag(F_IS_CTRL_ACTIVE)
+        set(v) { setFlag(F_IS_CTRL_ACTIVE, v) }
+
+    /** The editor belongs to a code editor or terminal (see CodeApps): no auto-correction, developer toolbar open. */
+    var isCodeEditor: Boolean
+        get() = getFlag(F_IS_CODE_EDITOR)
+        set(v) { setFlag(F_IS_CODE_EDITOR, v) }
+
+    var isDevToolbarVisible: Boolean
+        get() = getFlag(F_IS_DEV_TOOLBAR_VISIBLE)
+        set(v) { setFlag(F_IS_DEV_TOOLBAR_VISIBLE, v) }
 
     var isComposingEnabled: Boolean
         get() = getFlag(F_IS_COMPOSING_ENABLED)

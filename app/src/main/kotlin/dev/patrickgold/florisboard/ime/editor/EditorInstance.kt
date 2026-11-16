@@ -118,6 +118,8 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
             //!instance.inputAttributes.flagTextAutoComplete &&
             //!instance.inputAttributes.flagTextNoSuggestions
         }
+        activeState.isCodeEditor = prefs.smartbar.codeAppProfile.get() && CodeApps.isCodeApp(editorInfo.packageName)
+        activeState.isDevToolbarVisible = prefs.smartbar.devToolbarVisible.get() || activeState.isCodeEditor
         activeState.isIncognitoMode = when (prefs.suggestion.incognitoMode.get()) {
             IncognitoMode.FORCE_OFF -> false
             IncognitoMode.FORCE_ON -> true

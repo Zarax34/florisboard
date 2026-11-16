@@ -44,6 +44,96 @@
       "label": "Floris Pure Night (Borderless)",
       "authors": [ "serebit" ],
       "isNight": true
+    },
+    {
+      "id": "claude_day",
+      "label": "Claude Day",
+      "authors": [ "Zarax34" ],
+      "isNight": false
+    },
+    {
+      "id": "claude_night",
+      "label": "Claude Night",
+      "authors": [ "Zarax34" ],
+      "isNight": true
+    },
+    {
+      "id": "dracula",
+      "label": "Dracula",
+      "authors": [ "Zarax34" ],
+      "isNight": true
+    },
+    {
+      "id": "nord_day",
+      "label": "Nord Day",
+      "authors": [ "Zarax34" ],
+      "isNight": false
+    },
+    {
+      "id": "nord_night",
+      "label": "Nord Night",
+      "authors": [ "Zarax34" ],
+      "isNight": true
+    },
+    {
+      "id": "catppuccin_latte",
+      "label": "Catppuccin Latte",
+      "authors": [ "Zarax34" ],
+      "isNight": false
+    },
+    {
+      "id": "catppuccin_mocha",
+      "label": "Catppuccin Mocha",
+      "authors": [ "Zarax34" ],
+      "isNight": true
+    },
+    {
+      "id": "gruvbox_light",
+      "label": "Gruvbox Light",
+      "authors": [ "Zarax34" ],
+      "isNight": false
+    },
+    {
+      "id": "gruvbox_dark",
+      "label": "Gruvbox Dark",
+      "authors": [ "Zarax34" ],
+      "isNight": true
+    },
+    {
+      "id": "solarized_light",
+      "label": "Solarized Light",
+      "authors": [ "Zarax34" ],
+      "isNight": false
+    },
+    {
+      "id": "solarized_dark",
+      "label": "Solarized Dark",
+      "authors": [ "Zarax34" ],
+      "isNight": true
+    },
+    {
+      "id": "tokyo_night",
+      "label": "Tokyo Night",
+      "authors": [ "Zarax34" ],
+      "isNight": true
+    },
+    {
+      "id": "one_dark",
+      "label": "One Dark",
+      "authors": [ "Zarax34" ],
+      "isNight": true
+    },
+    {
+      "id": "pebble_day",
+      "label": "Pebble Day",
+      "authors": [ "Zarax34" ],
+      "isNight": false
+    },
+    {
+      "id": "pebble_night",
+      "label": "Pebble Night",
+      "authors": [ "Zarax34" ],
+      "isNight": true
     }
   ]
 }

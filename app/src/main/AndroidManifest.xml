@@ -7,6 +7,10 @@
 
     <!-- Permission needed to create notifications on devices running Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Permission needed for voice typing inside the keyboard (only requested when the mic key is used) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Only used to download offline voice models (Vosk) from alphacephei.com when the user asks for it -->
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <!-- Android 11+ only: Define that FlorisBoard requests to see all apps that
           ship with an IME or Spell Check service. This is used to guide the user
@@ -18,6 +22,10 @@
         </intent>
         <intent>
             <action android:name="android.service.textservice.SpellCheckerService"/>
+        </intent>
+        <!-- Voice typing: needed to find the system speech recognizer on Android 11+ -->
+        <intent>
+            <action android:name="android.speech.RecognitionService"/>
         </intent>
     </queries>
 
@@ -130,6 +138,18 @@
             </intent-filter>
         </activity>
 
+        <!-- Microphone permission prompt for voice typing -->
+        <activity
+            android:name="dev.patrickgold.florisboard.ime.voice.VoicePermissionActivity"
+            android:theme="@style/FlorisAppTheme.Transparent"
+            android:excludeFromRecents="true"
+            android:exported="false"/>
+        <!-- Encrypted vault for secrets taken out of the clipboard, opened after biometric authentication -->
+        <activity
+            android:name="dev.patrickgold.florisboard.ime.clipboard.vault.SecretVaultActivity"
+            android:theme="@style/FlorisVaultTheme"
+            android:excludeFromRecents="true"
+            android:exported="false"/>
         <!-- Clipboard Media File Provider -->
         <provider
             android:name="dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider"

@@ -88,6 +88,36 @@
     <string name="quick_action__toggle_autocorrect__tooltip">تمكين التصحيح التلقائي</string>
     <string name="quick_action__voice_input" comment="Please mind the limited available space for the quick action strings">إدخال الصوت</string>
     <string name="quick_action__voice_input__tooltip" comment="IME stands for Input Method Editor and is indirectly equivalent to 'keyboard'.">افتح موفر خدمة الإدخال الصوتي</string>
+    <string name="quick_action__code_toggle_case" comment="Please mind the limited available space for the quick action strings">حالة الأحرف</string>
+    <string name="quick_action__code_toggle_case__tooltip">تبديل النص المحدد بين camelCase و snake_case و CONSTANT و kebab-case و PascalCase</string>
+    <string name="quick_action__code_base64_encode" comment="Please mind the limited available space for the quick action strings">ترميز Base64</string>
+    <string name="quick_action__code_base64_encode__tooltip">ترميز النص المحدد إلى Base64</string>
+    <string name="quick_action__code_base64_decode" comment="Please mind the limited available space for the quick action strings">فك Base64</string>
+    <string name="quick_action__code_base64_decode__tooltip">فك ترميز Base64 للنص المحدد</string>
+    <string name="quick_action__code_url_encode" comment="Please mind the limited available space for the quick action strings">ترميز URL</string>
+    <string name="quick_action__code_url_encode__tooltip">ترميز النص المحدد للروابط</string>
+    <string name="quick_action__code_url_decode" comment="Please mind the limited available space for the quick action strings">فك URL</string>
+    <string name="quick_action__code_url_decode__tooltip">فك ترميز روابط النص المحدد</string>
+    <string name="quick_action__code_format_json" comment="Please mind the limited available space for the quick action strings">JSON</string>
+    <string name="quick_action__code_format_json__tooltip">تنسيق أو ضغط JSON المحدد</string>
+    <string name="quick_action__code_insert_uuid" comment="Please mind the limited available space for the quick action strings">UUID</string>
+    <string name="quick_action__code_insert_uuid__tooltip">إدراج معرّف UUID عشوائي</string>
+    <string name="quick_action__code_insert_timestamp" comment="Please mind the limited available space for the quick action strings">طابع زمني</string>
+    <string name="quick_action__code_insert_timestamp__tooltip">إدراج الوقت الحالي بصيغة ISO-8601 (UTC)</string>
+    <string name="code_tools__select_text_first">حدد نصًا أولًا</string>
+    <string name="code_tools__invalid_input">النص المحدد غير صالح لهذه الأداة</string>
+    <string name="autocorrect__toast_enabled">تم تشغيل التصحيح التلقائي</string>
+    <string name="autocorrect__toast_disabled">تم إيقاف التصحيح التلقائي</string>
+    <string name="voice_input__listening">جارٍ الاستماع… اضغط الميكروفون مرة أخرى للإيقاف</string>
+    <string name="voice_input__downloading_offline_model">جارٍ تنزيل حزمة الكلام بدون إنترنت لهذه اللغة</string>
+    <string name="voice_input__no_match">لم يتم التعرف على الكلام، حاول مرة أخرى</string>
+    <string name="voice_input__error">الكتابة بالصوت غير متاحة حاليًا</string>
+    <string name="voice_input__permission_granted">تم السماح بالميكروفون، اضغط زر الميكروفون مرة أخرى</string>
+    <string name="voice_input__permission_denied">الكتابة بالصوت تحتاج إذن الميكروفون</string>
+    <string name="clipboard__filter_links">روابط</string>
+    <string name="clipboard__filter_emails">إيميلات</string>
+    <string name="clipboard__filter_numbers">أرقام</string>
+    <string name="clipboard__filter_secrets">قيم سرية</string>
     <string name="quick_action__one_handed_mode" comment="Please mind the limited available space for the quick action strings">اليد الواحدة</string>
     <string name="quick_action__one_handed_mode__tooltip">تفعيل وضع اليد الواحدة</string>
     <string name="quick_action__drag_marker" comment="This action is only used as a placeholder in the actions editor drag and drop screen and only visible in debug mode">سحب التمييز</string>
@@ -334,6 +364,8 @@
     <string name="pref__correction__title" comment="Preference group title">التصحيحات</string>
     <string name="pref__correction__auto_capitalization__label" comment="Preference title">استخدام الأحرف الكبيرة تلقائيًا</string>
     <string name="pref__correction__auto_capitalization__summary" comment="Preference summary">استخدام الأحرف الكبيرة في الكلمات على حسب سياق نص الإدخال الحالي</string>
+    <string name="pref__correction__auto_correct__label">التصحيح التلقائي</string>
+    <string name="pref__correction__auto_correct__summary">تصحيح الكلمات الخاطئة عند الضغط على المسافة. اضغط زر الحذف مباشرة بعد التصحيح للتراجع عنه. الكلمة التي تكررها تُحفظ بعد عدة مرات.</string>
     <string name="pref__correction__auto_space_punctuation__label" comment="Preference title">مسافة تلقائية بعد علامات الترقيم</string>
     <string name="pref__correction__auto_space_punctuation__summary" comment="Preference summary">وضع بشكل تلقائي مسافة بعد علامات الترقيم</string>
     <string name="pref__correction__remember_caps_lock_state__label" comment="Preference title">تذكر حالة زر الأحرف الكبيرة</string>
@@ -905,4 +937,40 @@
         <item quantity="many">{v} مرشحات</item>
         <item quantity="other">{v} مرشحون</item>
     </plurals>
+    <string name="quick_action__key_tab">Tab</string>
+    <string name="quick_action__key_tab__tooltip">إدراج مسافة جدولة (Tab)</string>
+    <string name="quick_action__key_escape">Esc</string>
+    <string name="quick_action__key_escape__tooltip">إرسال مفتاح الهروب Escape</string>
+    <string name="quick_action__key_ctrl">Ctrl</string>
+    <string name="quick_action__key_ctrl__tooltip">Ctrl للمفتاح التالي (مثل Ctrl+S و Ctrl+F)</string>
+    <string name="pref__correction__auto_pair_brackets__label">إغلاق الأقواس تلقائيًا</string>
+    <string name="pref__correction__auto_pair_brackets__summary">كتابة ( أو [ أو { تضيف القوس المقابل أيضًا، مفيد عند كتابة الأكواد</string>
+    <string name="settings__learned_words__title">الكلمات المتعلَّمة</string>
+    <string name="pref__dictionary__manage_learned_words__summary">عرض الكلمات التي تعلمتها لوحة المفاتيح من كتابتك وحذفها</string>
+    <string name="settings__learned_words__summary">تُحسب كل كلمة تكتبها. الكلمة غير الموجودة في القاموس لا تُقترح إلا بعد كتابتها {count} مرات، لذلك لا تُحفظ الأخطاء العابرة.</string>
+    <string name="settings__learned_words__empty">لم يُتعلَّم شيء بعد.</string>
+    <string name="settings__learned_words__learned">كُتبت {count} مرة · محفوظة</string>
+    <string name="settings__learned_words__counted">كُتبت {count} مرة</string>
+    <string name="settings__learned_words__clear_title">نسيان كل الكلمات المتعلَّمة؟</string>
+    <string name="settings__learned_words__clear_message">سيُحذف كل ما تعلمته لوحة المفاتيح لهذه اللغة، ولا يمكن التراجع عن ذلك.</string>
+    <string name="settings__voice_models__group">الكتابة الصوتية</string>
+    <string name="settings__voice_models__title">نماذج الصوت دون إنترنت</string>
+    <string name="pref__typing__voice_models__summary">استورد نموذج Vosk للكتابة بالصوت دون إنترنت</string>
+    <string name="settings__voice_models__summary">عند تثبيت نموذج Vosk للغة، تعمل الكتابة بالصوت بالكامل على الهاتف دون إنترنت ودون خدمة كلام خارجية. نزّل نموذجًا من القائمة أدناه (يُستخدم الإنترنت لهذا التنزيل فقط)، أو استورد ملف نموذج zip من alphacephei.com/vosk/models. اضغط الميكروفون مرة أخرى لإيقاف الإملاء.</string>
+    <string name="settings__voice_models__empty">لا يوجد نموذج مثبت. تستخدم الكتابة بالصوت خدمة الكلام في الهاتف.</string>
+    <string name="settings__voice_models__import">استيراد نموذج (zip)</string>
+    <string name="settings__voice_models__importing">جارٍ استيراد النموذج، قد يستغرق ذلك دقيقة…</string>
+    <string name="settings__voice_models__import_success">ثُبّت نموذج الصوت دون إنترنت للغة {language}</string>
+    <string name="settings__voice_models__import_failed">فشل الاستيراد: الملف ليس نموذج Vosk بصيغة zip</string>
+    <string name="quick_action__toggle_dev_toolbar">شريط المطورين</string>
+    <string name="quick_action__toggle_dev_toolbar__tooltip">إظهار أو إخفاء شريط المطورين (Tab وEsc وCtrl والأسهم ورموز البرمجة وأدواتها)</string>
+    <string name="settings__voice_models__installed_title">المثبتة</string>
+    <string name="settings__voice_models__download_title">تنزيل</string>
+    <string name="settings__voice_models__size">{size} ميغابايت</string>
+    <string name="settings__voice_models__downloading">جارٍ التنزيل… {percent}%</string>
+    <string name="settings__voice_models__download_failed">فشل التنزيل، تحقق من الاتصال بالإنترنت وحاول مجددًا</string>
+    <string name="settings__voice_models__note_ar_mgb2">العربية الفصحى، دقة أعلى</string>
+    <string name="settings__voice_models__note_ar_small">أخف حجمًا، مدرَّب على اللهجة التونسية</string>
+    <string name="pref__smartbar__code_app_profile__label">وضع المطور في تطبيقات البرمجة</string>
+    <string name="pref__smartbar__code_app_profile__summary">في محررات الأكواد والطرفيات (Termux وAcode وSpck…) يُفتح شريط المطورين ويتوقف التصحيح التلقائي</string>
 </resources>

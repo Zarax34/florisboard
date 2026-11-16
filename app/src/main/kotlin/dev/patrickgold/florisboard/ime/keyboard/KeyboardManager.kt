@@ -17,7 +17,7 @@
 package dev.patrickgold.florisboard.ime.keyboard
 
 import android.content.Context
-import android.icu.lang.UCharacter
+import android.os.SystemClock
 import android.view.KeyEvent
 import android.widget.Toast
 import androidx.compose.runtime.getValue
@@ -45,7 +45,11 @@ import dev.patrickgold.florisboard.ime.input.InputKeyEventReceiver
 import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.PunctuationRule
+import dev.patrickgold.florisboard.ime.nlp.ShortcutCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
+import dev.patrickgold.florisboard.ime.nlp.latin.lastWord
+import dev.patrickgold.florisboard.ime.codetools.CodeTools
+import dev.patrickgold.florisboard.ime.voice.VoiceInputController
 import dev.patrickgold.florisboard.ime.popup.PopupMappingComponent
 import dev.patrickgold.florisboard.ime.text.composing.Composer
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
@@ -83,6 +87,14 @@ import org.florisboard.lib.kotlin.collectLatestIn
 
 private val DoubleSpacePeriodMatcher = """([^.!?‽\s]\s)""".toRegex()
 
+/** Characters that finish a word and may trigger an auto-correction, like the space key. */
+/** Holding the mic at least this long makes releasing it stop dictation (push-to-talk). */
+private const val HOLD_TO_TALK_MS = 500L
+
+private val BracketPairs = mapOf("(" to ")", "[" to "]", "{" to "}")
+
+private val WordEndingPunctuation =setOf(".", ",", "!", "?", ";", ":", ")", "\"", "،", "؛", "؟")
+
 class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private val prefs by FlorisPreferenceStore
     private val appContext by context.appContext()
@@ -100,6 +112,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     val activeState = ObservableKeyboardState.new()
     var smartbarVisibleDynamicActionsCount by mutableIntStateOf(0)
     private var lastToastReference = WeakReference<Toast>(null)
+    private val voiceInput by lazy { VoiceInputController(appContext) }
+    private var voiceKeyDownTime = 0L
+    private var wasListeningOnVoiceKeyDown = false
+
+    /** The last auto-correction, so that an immediate backspace can restore what the user typed. */
+    private class AutoCorrection(val typed: String, val corrected: String, val cursorAfter: Int)
+    private var lastAutoCorrection: AutoCorrection? = null
 
     private val activeEvaluatorGuard = Mutex(locked = false)
     private var activeEvaluatorVersion = AtomicInteger(0)
@@ -288,8 +307,155 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
         when (candidate) {
             is ClipboardSuggestionCandidate -> editorInstance.commitClipboardItem(candidate.clipboardItem)
-            else -> editorInstance.commitCompletion(candidate)
+            is ShortcutCandidate -> if (candidate.cursorFromEnd > 0) commitSnippet(candidate) else {
+                editorInstance.commitCompletion(candidate)
+            }
+            else -> {
+                val previousWord = previousWordOf(editorInstance.activeContent)
+                editorInstance.commitCompletion(candidate)
+                nlpManager.learnWord(subtypeManager.activeSubtype, candidate.text.toString(), previousWord)
+            }
         }
+    }
+
+    /** A shortcut with `{cursor}`: insert it without a trailing space and put the cursor at the marker. */
+    private fun commitSnippet(candidate: ShortcutCandidate) {
+        val text = candidate.text.toString()
+        if (editorInstance.activeContent.composing.isValid) {
+            editorInstance.finalizeComposingText(text)
+        } else {
+            editorInstance.commitText(text)
+        }
+        val end = editorInstance.activeContent.selection.end
+        editorInstance.setSelection(end - candidate.cursorFromEnd, end - candidate.cursorFromEnd)
+    }
+
+    private fun previousWordOf(content: EditorContent): String? {
+        return lastWord(content.textBeforeSelection.removeSuffix(content.composingText))
+    }
+
+    /**
+     * Finishes the word being typed: commits the auto-commit candidate (auto-correction or text shortcut) if there
+     * is one, otherwise learns the typed word as-is.
+     *
+     * @return The committed candidate, if any.
+     */
+    private fun finishComposingWord(): SuggestionCandidate? {
+        val content = editorInstance.activeContent
+        val typed = content.composingText
+        val candidate = nlpManager.getAutoCommitCandidate()
+        if (candidate != null) {
+            commitCandidate(candidate)
+        } else if (typed.isNotEmpty()) {
+            nlpManager.learnWord(subtypeManager.activeSubtype, typed, previousWordOf(content))
+        }
+        return candidate
+    }
+
+    /** Call right after the space following an auto-committed [candidate] was inserted. */
+    private fun rememberAutoCorrection(typed: String, candidate: SuggestionCandidate?) {
+        val corrected = candidate?.text?.toString() ?: return
+        if (typed.isEmpty() || corrected == typed) return
+        lastAutoCorrection = AutoCorrection(typed, corrected, editorInstance.activeContent.selection.end)
+    }
+
+    /**
+     * Backspace right after an auto-correction (or text shortcut expansion) restores what the user typed and tells
+     * the language model the word was meant literally.
+     */
+    private fun tryRevertAutoCorrection(): Boolean {
+        val autoCorrection = lastAutoCorrection ?: return false
+        lastAutoCorrection = null
+        val content = editorInstance.activeContent
+        val expected = "${autoCorrection.corrected} "
+        val end = content.selection.end
+        if (content.selection.isSelectionMode || end != autoCorrection.cursorAfter) return false
+        if (editorInstance.run { content.getTextBeforeCursor(expected.length) } != expected) return false
+        editorInstance.setSelection(end - expected.length, end)
+        editorInstance.commitText(autoCorrection.typed)
+        nlpManager.keepLiterally(subtypeManager.activeSubtype, autoCorrection.typed)
+        return true
+    }
+
+    private fun handleCodeTool(code: Int) {
+        when (code) {
+            KeyCode.CODE_INSERT_UUID -> editorInstance.commitText(CodeTools.uuid())
+            KeyCode.CODE_INSERT_TIMESTAMP -> editorInstance.commitText(CodeTools.timestamp())
+            else -> {
+                val content = editorInstance.activeContent
+                val selected = content.selectedText
+                if (selected.isEmpty()) {
+                    appContext.showShortToastSync(R.string.code_tools__select_text_first)
+                    return
+                }
+                val result = when (code) {
+                    KeyCode.CODE_TOGGLE_CASE -> CodeTools.cycleCase(selected)
+                    KeyCode.CODE_BASE64_ENCODE -> CodeTools.base64Encode(selected)
+                    KeyCode.CODE_BASE64_DECODE -> CodeTools.base64Decode(selected)
+                    KeyCode.CODE_URL_ENCODE -> CodeTools.urlEncode(selected)
+                    KeyCode.CODE_URL_DECODE -> CodeTools.urlDecode(selected)
+                    KeyCode.CODE_FORMAT_JSON -> CodeTools.formatJson(selected)
+                    else -> null
+                }
+                if (result == null) {
+                    appContext.showShortToastSync(R.string.code_tools__invalid_input)
+                    return
+                }
+                val start = content.selection.start
+                editorInstance.commitText(result)
+                // Keep the result selected so tools can be chained (e.g. cycling through cases)
+                editorInstance.setSelection(start, start + result.length)
+            }
+        }
+    }
+
+    /** Ctrl + letter/digit as a hardware key event, so editors run their shortcut (Ctrl+S, Ctrl+F, ...). */
+    private fun sendCtrlShortcut(text: String): Boolean {
+        val c = text.singleOrNull()?.uppercaseChar() ?: return false
+        if (c !in 'A'..'Z' && c !in '0'..'9') return false
+        val keyCode = KeyEvent.keyCodeFromString("KEYCODE_$c")
+        if (keyCode == KeyEvent.KEYCODE_UNKNOWN) return false
+        return editorInstance.sendDownUpKeyEvent(keyCode, editorInstance.meta(ctrl = true))
+    }
+
+    /**
+     * With bracket auto-pairing on, an opening bracket inserts its closing one too (wrapping the selection, if any),
+     * and typing a closing bracket right before the same one just steps over it.
+     */
+    private fun tryAutoPairBracket(text: String): Boolean {
+        if (!prefs.correction.autoPairBrackets.get()) return false
+        val content = editorInstance.activeContent
+        val selection = content.selection
+        val closing = BracketPairs[text]
+        if (closing != null) {
+            val selected = content.selectedText
+            editorInstance.commitText(text + selected + closing)
+            editorInstance.setSelection(selection.start + text.length, selection.start + text.length + selected.length)
+            return true
+        }
+        if (text in BracketPairs.values && !selection.isSelectionMode && content.textAfterSelection.startsWith(text)) {
+            editorInstance.setSelection(selection.end + text.length, selection.end + text.length)
+            return true
+        }
+        return false
+    }
+
+    /** Mic pressed: start listening right away, so holding the key works as push-to-talk. */
+    private fun handleVoiceInputDown() {
+        voiceKeyDownTime = SystemClock.uptimeMillis()
+        wasListeningOnVoiceKeyDown = voiceInput.isListening
+        if (wasListeningOnVoiceKeyDown) return
+        if (voiceInput.isAvailable()) {
+            voiceInput.toggle()
+        } else {
+            FlorisImeService.switchToVoiceInputMethod()
+        }
+    }
+
+    /** Mic released: a tap toggles dictation, releasing after holding it stops (push-to-talk). */
+    private fun handleVoiceInputUp() {
+        val wasHeld = SystemClock.uptimeMillis() - voiceKeyDownTime >= HOLD_TO_TALK_MS
+        if ((wasListeningOnVoiceKeyDown || wasHeld) && voiceInput.isListening) voiceInput.toggle()
     }
 
     fun commitGesture(word: String) {
@@ -423,6 +589,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             it.isManualSelectionModeStart = false
             it.isManualSelectionModeEnd = false
         }
+        if (unit == OperationUnit.CHARACTERS && tryRevertAutoCorrection()) return
         revertPreviouslyAcceptedCandidate()
         editorInstance.deleteBackwards(unit)
     }
@@ -448,6 +615,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         val isShiftPressed = inputEventDispatcher.isPressed(KeyCode.SHIFT)
         if (editorInstance.tryPerformEnterCommitRaw()) {
             return
+        }
+        editorInstance.activeContent.let { content ->
+            nlpManager.learnWord(subtypeManager.activeSubtype, content.composingText, previousWordOf(content))
         }
         if (info.imeOptions.flagNoEnterAction || info.inputAttributes.flagTextMultiLine && isShiftPressed) {
             editorInstance.performEnter()
@@ -535,9 +705,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * but skips handling changing to characters keyboard and double space periods.
      */
     fun handleHardwareKeyboardSpace() {
-        val candidate = nlpManager.getAutoCommitCandidate()
-        candidate?.let { commitCandidate(it) }
+        val candidate = finishComposingWord()
         // Skip handling changing to characters keyboard and double space periods
+        // A snippet put the cursor inside itself, a space there would land in the middle of it
+        if (candidate is ShortcutCandidate && candidate.cursorFromEnd > 0) return
         // TODO: this is whether we commit space after selecting candidate. Should be determined by SuggestionProvider
         if (!subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace &&
                 candidate != null) { /* Do nothing */ } else {
@@ -550,8 +721,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * enabled by the user.
      */
     private fun handleSpace(data: KeyData) {
-        val candidate = nlpManager.getAutoCommitCandidate()
-        candidate?.let { commitCandidate(it) }
+        val typed = editorInstance.activeContent.composingText
+        val candidate = finishComposingWord()
         if (prefs.keyboard.spaceBarSwitchesToCharacters.get()) {
             when (activeState.keyboardMode) {
                 KeyboardMode.NUMERIC_ADVANCED,
@@ -572,10 +743,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 }
             }
         }
+        // A snippet put the cursor inside itself, a space there would land in the middle of it
+        if (candidate is ShortcutCandidate && candidate.cursorFromEnd > 0) return
         // TODO: this is whether we commit space after selecting candidate. Should be determined by SuggestionProvider
         if (!subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace &&
                 candidate != null) { /* Do nothing */ } else {
             editorInstance.commitText(KeyCode.SPACE.toChar().toString())
+            rememberAutoCorrection(typed, candidate)
         }
     }
 
@@ -607,8 +781,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      */
     private fun handleToggleAutocorrect() {
         lastToastReference.get()?.cancel()
+        val enabled = !prefs.correction.autoCorrect.get()
+        scope.launch { prefs.correction.autoCorrect.set(enabled) }
         lastToastReference = WeakReference(
-            appContext.showLongToastSync("Autocorrect toggle is a placeholder and not yet implemented")
+            appContext.showShortToastSync(
+                if (enabled) R.string.autocorrect__toast_enabled else R.string.autocorrect__toast_disabled
+            )
         )
     }
 
@@ -688,11 +866,16 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 editorInstance.massSelection.begin()
             }
             KeyCode.SHIFT -> handleShiftDown(data)
+            KeyCode.VOICE_INPUT -> handleVoiceInputDown()
         }
     }
 
     override fun onInputKeyUp(data: KeyData) = activeState.batchEdit {
         val windowController = FlorisImeService.windowControllerOrNull() ?: return@batchEdit
+        if (data.code != KeyCode.DELETE) lastAutoCorrection = null
+        // One-shot Ctrl applies to the next key only
+        val isCtrlShortcut = activeState.isCtrlActive && data.code != KeyCode.CTRL && data.code != KeyCode.SHIFT
+        if (isCtrlShortcut) activeState.isCtrlActive = false
         when (data.code) {
             KeyCode.ARROW_DOWN,
             KeyCode.ARROW_LEFT,
@@ -740,7 +923,21 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.IME_UI_MODE_TEXT -> activeState.imeUiMode = ImeUiMode.TEXT
             KeyCode.IME_UI_MODE_MEDIA -> activeState.imeUiMode = ImeUiMode.MEDIA
             KeyCode.IME_UI_MODE_CLIPBOARD -> activeState.imeUiMode = ImeUiMode.CLIPBOARD
-            KeyCode.VOICE_INPUT -> FlorisImeService.switchToVoiceInputMethod()
+            KeyCode.VOICE_INPUT -> handleVoiceInputUp()
+            KeyCode.TAB -> {
+                finishComposingWord()
+                editorInstance.commitText("\t")
+            }
+            KeyCode.ESCAPE -> editorInstance.sendDownUpKeyEvent(KeyEvent.KEYCODE_ESCAPE)
+            KeyCode.CTRL -> activeState.isCtrlActive = !activeState.isCtrlActive
+            KeyCode.CODE_TOGGLE_CASE,
+            KeyCode.CODE_BASE64_ENCODE,
+            KeyCode.CODE_BASE64_DECODE,
+            KeyCode.CODE_URL_ENCODE,
+            KeyCode.CODE_URL_DECODE,
+            KeyCode.CODE_FORMAT_JSON,
+            KeyCode.CODE_INSERT_UUID,
+            KeyCode.CODE_INSERT_TIMESTAMP -> handleCodeTool(data.code)
             KeyCode.KANA_SWITCHER -> handleKanaSwitch()
             KeyCode.KANA_HIRA -> handleKanaHira()
             KeyCode.KANA_KATA -> handleKanaKata()
@@ -767,6 +964,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             }
             KeyCode.TOGGLE_INCOGNITO_MODE -> scope.launch { handleToggleIncognitoMode() }
             KeyCode.TOGGLE_AUTOCORRECT -> handleToggleAutocorrect()
+            KeyCode.TOGGLE_DEV_TOOLBAR -> {
+                activeState.isDevToolbarVisible = !activeState.isDevToolbarVisible
+                // Opened automatically in code apps; elsewhere the choice is remembered
+                if (!activeState.isCodeEditor) {
+                    scope.launch { prefs.smartbar.devToolbarVisible.set(activeState.isDevToolbarVisible) }
+                }
+            }
             KeyCode.UNDO -> editorInstance.performUndo()
             KeyCode.VIEW_CHARACTERS -> activeState.keyboardMode = KeyboardMode.CHARACTERS
             KeyCode.VIEW_NUMERIC -> activeState.keyboardMode = KeyboardMode.NUMERIC
@@ -777,7 +981,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.VIEW_SYMBOLS2 -> activeState.keyboardMode = KeyboardMode.SYMBOLS2
             else -> {
                 if (activeState.imeUiMode == ImeUiMode.MEDIA) {
-                    nlpManager.getAutoCommitCandidate()?.let { commitCandidate(it) }
+                    finishComposingWord()
                     editorInstance.commitText(data.asString(isForDisplay = false))
                     return@batchEdit
                 }
@@ -802,10 +1006,15 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                     else -> when (data.type) {
                         KeyType.CHARACTER, KeyType.NUMERIC ->{
                             val text = data.asString(isForDisplay = false)
-                            if (!UCharacter.isUAlphabetic(UCharacter.codePointAt(text, 0))) {
-                                nlpManager.getAutoCommitCandidate()?.let { commitCandidate(it) }
+                            if (isCtrlShortcut && sendCtrlShortcut(text)) return@batchEdit
+                            // Only sentence punctuation ends a word; apostrophes, digits, '@', '_' etc. are part
+                            // of words, emails or code and must not trigger an auto-correction.
+                            if (text in WordEndingPunctuation) {
+                                finishComposingWord()
                             }
-                            editorInstance.commitChar(text)
+                            if (!tryAutoPairBracket(text)) {
+                                editorInstance.commitChar(text)
+                            }
                         }
                         else -> {
                             flogError(LogTopic.KEY_EVENTS) { "Received unknown key: $data" }

@@ -47,6 +47,7 @@ import androidx.room.TypeConverters
 import androidx.room.Update
 import androidx.room.migration.AutoMigrationSpec
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.ime.clipboard.ClipContentKind
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -115,6 +116,7 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
                 creationTimestampMs = System.currentTimeMillis(),
                 isPinned = false,
                 mimeTypes = TEXT_PLAIN,
+                isSensitive = ClipContentKind.isSecret(text),
             )
         }
 
@@ -132,11 +134,13 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
                 else -> ItemType.TEXT
             }
 
-            val isSensitive = if (AndroidVersion.ATLEAST_API33_T) {
+            val isMarkedSensitive = if (AndroidVersion.ATLEAST_API33_T) {
                 data.description?.extras?.getBoolean(EXTRA_IS_SENSITIVE) ?: false
             } else {
                 false
             }
+            // Many apps don't flag passwords/API keys as sensitive, so detect them ourselves
+            val isSensitive = isMarkedSensitive || dataItem?.text?.let { ClipContentKind.isSecret(it.toString()) } == true
 
             val isRemoteDevice = if (AndroidVersion.ATLEAST_API34_U) {
                 data.description?.extras?.getBoolean(EXTRA_IS_REMOTE_DEVICE) ?: false

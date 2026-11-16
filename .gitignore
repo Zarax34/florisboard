@@ -48,6 +48,9 @@ captures/
 
 # Keystore files
 *.jks
+*.keystore
+keystore/
+keystore.properties
 crowdin.properties
 
 # C++

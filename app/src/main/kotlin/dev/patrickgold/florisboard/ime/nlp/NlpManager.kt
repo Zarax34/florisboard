@@ -22,6 +22,7 @@ import android.util.LruCache
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.editorInstance
+import dev.patrickgold.florisboard.ime.clipboard.ClipContentKind
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.core.Subtype
@@ -247,6 +248,32 @@ class NlpManager(context: Context) {
         }
     }
 
+    /**
+     * Feeds a finished word into the learning model of the active language provider. Nothing is learned in
+     * incognito mode or in fields that disable composing (passwords, numbers).
+     */
+    fun learnWord(subtype: Subtype, word: String, previousWord: String?) {
+        if (word.isBlank() || keyboardManager.activeState.isIncognitoMode || !keyboardManager.activeState.isComposingEnabled) {
+            return
+        }
+        scope.launch {
+            (getSuggestionProvider(subtype) as? LatinLanguageProvider)?.learn(subtype, word, previousWord)
+        }
+    }
+
+    /** Owns what the user typed (learned words), used by the learned-words settings screen. */
+    suspend fun latinProvider(): LatinLanguageProvider {
+        return providers.withLock { it.getValue(LatinLanguageProvider.ProviderId) }.provider as LatinLanguageProvider
+    }
+
+    /** The user undid an auto-correction, so [typed] was meant literally. */
+    fun keepLiterally(subtype: Subtype, typed: String) {
+        if (keyboardManager.activeState.isIncognitoMode) return
+        scope.launch {
+            (getSuggestionProvider(subtype) as? LatinLanguageProvider)?.keepLiterally(subtype, typed)
+        }
+    }
+
     fun getAutoCommitCandidate(): SuggestionCandidate? {
         return activeCandidates.firstOrNull { it.isEligibleForAutoCommit }
     }
@@ -381,6 +408,16 @@ class NlpManager(context: Context) {
                     }
                     if (currentItem.type == ItemType.TEXT) {
                         val text = currentItem.stringRepresentation()
+                        val oneTimeCode = ClipContentKind.extractOneTimeCode(text)?.takeIf { it != text }
+                        if (oneTimeCode != null) {
+                            // The code is what the user copied the message for, offer it first
+                            add(0, ClipboardSuggestionCandidate(
+                                clipboardItem = currentItem.copy(text = oneTimeCode),
+                                sourceProvider = this@ClipboardSuggestionProvider,
+                                context = context,
+                                isOneTimeCode = true,
+                            ))
+                        }
                         val matches = buildList {
                             addAll(NetworkUtils.getEmailAddresses(text))
                             addAll(NetworkUtils.getUrls(text))
@@ -390,7 +427,7 @@ class NlpManager(context: Context) {
                             val isUniqueMatch = matches.subList(0, i).all { prevMatch ->
                                 prevMatch.value != match.value && prevMatch.range.intersect(match.range).isEmpty()
                             }
-                            if (match.value != text && isUniqueMatch) {
+                            if (match.value != text && match.value != oneTimeCode && isUniqueMatch) {
                                 add(ClipboardSuggestionCandidate(
                                     clipboardItem = currentItem.copy(
                                         // TODO: adjust regex of phone number so we don't need to manually strip the
