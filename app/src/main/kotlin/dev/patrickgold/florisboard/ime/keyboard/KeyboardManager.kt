@@ -311,19 +311,22 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
     }
 
-    /** Commits the given [candidate] to the editor. */
-    fun commitCandidate(candidate: SuggestionCandidate) {
+    /**
+     * Commits the given [candidate] to the editor. [isAutoCommit] is true when typing a space/punctuation committed
+     * it: that key adds its own separator, so no trailing space is added here (else the result has two spaces).
+     */
+    fun commitCandidate(candidate: SuggestionCandidate, isAutoCommit: Boolean = false) {
         scope.launch {
             candidate.sourceProvider?.notifySuggestionAccepted(subtypeManager.activeSubtype, candidate)
         }
         when (candidate) {
             is ClipboardSuggestionCandidate -> editorInstance.commitClipboardItem(candidate.clipboardItem)
             is ShortcutCandidate -> if (candidate.cursorFromEnd > 0) commitSnippet(candidate) else {
-                editorInstance.commitCompletion(candidate)
+                editorInstance.commitCompletion(candidate, isAutoCorrection = isAutoCommit)
             }
             else -> {
                 val previousWord = previousWordOf(editorInstance.activeContent)
-                editorInstance.commitCompletion(candidate)
+                editorInstance.commitCompletion(candidate, isAutoCorrection = isAutoCommit)
                 nlpManager.learnWord(subtypeManager.activeSubtype, candidate.text.toString(), previousWord)
             }
         }
@@ -356,7 +359,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         val typed = content.composingText
         val candidate = nlpManager.getAutoCommitCandidate()
         if (candidate != null) {
-            commitCandidate(candidate)
+            commitCandidate(candidate, isAutoCommit = true)
         } else if (typed.isNotEmpty()) {
             nlpManager.learnWord(subtypeManager.activeSubtype, typed, previousWordOf(content))
         }

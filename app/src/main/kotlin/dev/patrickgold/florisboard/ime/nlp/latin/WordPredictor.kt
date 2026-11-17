@@ -218,6 +218,12 @@ class WordPredictor(
         private const val BIGRAM_WEIGHT = 0.35
         private const val COMMON_NEXT_WORD_WEIGHT = 0.3
 
+        // Longest first is not needed: every combination is tried. "" = no affix.
+        private val ARABIC_PREFIXES = listOf("", "و", "ف", "ب", "ل", "ك", "س", "ال", "وال", "فال", "بال", "كال", "لل", "ولل", "فلل")
+        private val ARABIC_SUFFIXES = listOf(
+            "", "ك", "ه", "ي", "ني", "نا", "ها", "هم", "هن", "كم", "كن", "هما", "كما", "ات", "ون", "ين", "ان", "وا", "ة",
+        )
+
         private fun maxEditDistance(keyLength: Int): Int = when {
             keyLength < 2 -> 0
             keyLength < 6 -> 1
@@ -317,9 +323,33 @@ class WordPredictor(
     ): String? {
         if (key.length < MIN_AUTOCORRECT_LENGTH || !lower.all(::isWordChar)) return null
         if (isKnown(lower, isUserWord)) return null
+        if (isArabicWordForm(lower)) return null
         val target = corrections.maxByOrNull { scores[it] ?: Double.NEGATIVE_INFINITY } ?: return null
         val typedFreq = dictionary.freq(lower)
         return target.takeIf { typedFreq == 0 || frequency(target) - typedFreq >= MIN_FREQ_GAP }
+    }
+
+    /**
+     * Arabic glues prefixes (و ف ب ل ك ال) and pronoun suffixes (ك ها هم ...) to words, so most valid forms are rare
+     * or missing in the dictionary ("صاحبك" is rarer than "صاحب" but just as correct). An Arabic word is left alone
+     * if it is in the dictionary at all, or if its stem (one prefix and/or one suffix removed) is.
+     * ponytail: affix stripping, not real morphology; a stemmer would catch broken plurals etc. if this misses.
+     */
+    private fun isArabicWordForm(word: String): Boolean {
+        if (word.none { it in 'ء'..'ي' }) return false
+        if (dictionary.freq(word) > 0) return true
+        for (prefix in ARABIC_PREFIXES) {
+            if (!word.startsWith(prefix)) continue
+            for (suffix in ARABIC_SUFFIXES) {
+                if (!word.endsWith(suffix) || word.length - prefix.length - suffix.length < 2) continue
+                val stem = word.substring(prefix.length, word.length - suffix.length)
+                // A suffix after taa marbuta turns it into ت: صاحبتك -> صاحبة
+                if (dictionary.freq(stem) > 0 || (stem.endsWith('ت') && dictionary.freq(stem.dropLast(1) + 'ة') > 0)) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     /** After a space: what the user usually types next, merged with what commonly follows in the language. */

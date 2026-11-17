@@ -49,6 +49,13 @@ class WordPredictorTest : FunSpec({
         }
     }
 
+    test("arabic rare and affixed forms are not corrected") {
+        // صاحبك is in the dictionary but rare; the others are prefix/suffix forms of dictionary words
+        for (word in listOf("صاحبك", "وصاحبك", "صاحبتك", "بكتابهم", "وللمدرسة")) {
+            autoCorrection(arabic, word) shouldBe null
+        }
+    }
+
     test("arabic suggestions include the hamza form") {
         val words = WordPredictor(arabic, UserWordModel()).predict("انا", null, 8, autoCorrect = true).map { it.word }
         words.contains("أنا") shouldBe true
