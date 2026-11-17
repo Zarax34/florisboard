@@ -326,7 +326,19 @@ class WordPredictor(
         if (isArabicWordForm(lower)) return null
         val target = corrections.maxByOrNull { scores[it] ?: Double.NEGATIVE_INFINITY } ?: return null
         val typedFreq = dictionary.freq(lower)
-        return target.takeIf { typedFreq == 0 || frequency(target) - typedFreq >= MIN_FREQ_GAP }
+        // A real word is never swapped for another real word, however much more common or more used that one is.
+        // Only exception: the web-scraped English list contains frequent misspellings ("teh", "thier"), and those
+        // are always two swapped letters of the word they should be.
+        return target.takeIf {
+            typedFreq == 0 || (isSwappedLetters(lower, it) && frequency(it) - typedFreq >= MIN_FREQ_GAP)
+        }
+    }
+
+    /** True if [a] is [b] with exactly two adjacent letters swapped ("teh"/"the", "recieve"/"receive"). */
+    private fun isSwappedLetters(a: String, b: String): Boolean {
+        if (a.length != b.length) return false
+        val i = a.indices.firstOrNull { a[it] != b[it] } ?: return false
+        return i + 1 < a.length && a[i] == b[i + 1] && a[i + 1] == b[i] && a.substring(i + 2) == b.substring(i + 2)
     }
 
     /**

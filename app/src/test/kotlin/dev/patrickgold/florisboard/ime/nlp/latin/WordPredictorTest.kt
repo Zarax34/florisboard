@@ -49,6 +49,12 @@ class WordPredictorTest : FunSpec({
         }
     }
 
+    test("a rare real word is never replaced by a more common one, only swapped-letter typos are") {
+        val dict = WordDictionary(mapOf("there" to 250, "thee" to 120, "the" to 255, "teh" to 150))
+        autoCorrection(dict, "thee") shouldBe null
+        autoCorrection(dict, "teh") shouldBe "the"
+    }
+
     test("arabic rare and affixed forms are not corrected") {
         // صاحبك is in the dictionary but rare; the others are prefix/suffix forms of dictionary words
         for (word in listOf("صاحبك", "وصاحبك", "صاحبتك", "بكتابهم", "وللمدرسة")) {
