@@ -217,6 +217,7 @@ class WordPredictor(
         private const val USER_WEIGHT = 0.1
         private const val BIGRAM_WEIGHT = 0.35
         private const val COMMON_NEXT_WORD_WEIGHT = 0.3
+        private const val NEXT_WORD_FREQ_WEIGHT = 0.1
 
         // Longest first is not needed: every combination is tried. "" = no affix.
         private val ARABIC_PREFIXES = listOf("", "و", "ف", "ب", "ل", "ك", "س", "ال", "وال", "فال", "بال", "كال", "لل", "ولل", "فلل")
@@ -372,13 +373,14 @@ class WordPredictor(
         nextWordTable.next(prev).mapTo(candidates) { it.first }
         return candidates
             .filter { !model.isBlocked(it) && (dictionary.freq(it) > 0 || model.isLearned(it)) }
-            .map { Prediction(it, baseScore(it, dictionary.freq(it), prev)) }
+            // Here what follows `prev` matters, not how common a word is in general ("صباح الخير", not "صباح اليوم")
+            .map { Prediction(it, baseScore(it, dictionary.freq(it), prev, freqWeight = NEXT_WORD_FREQ_WEIGHT)) }
             .sortedByDescending { it.score }
             .take(maxCount)
     }
 
-    private fun baseScore(word: String, freq: Int, prev: String?): Double {
-        var score = freq / 255.0
+    private fun baseScore(word: String, freq: Int, prev: String?, freqWeight: Double = 1.0): Double {
+        var score = freqWeight * freq / 255.0
         val count = model.count(word)
         if (count > 0) score += USER_WEIGHT * ln(1.0 + count)
         if (prev != null) {

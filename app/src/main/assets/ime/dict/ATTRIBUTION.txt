@@ -1,11 +1,17 @@
 ar.json
   Arabic word frequencies derived from "FrequencyWords" by Hermit Dave
-  (https://github.com/hermitdave/FrequencyWords, content/2018/ar/ar_50k.txt),
+  (https://github.com/hermitdave/FrequencyWords, content/2018/ar/ar_full.txt),
   built from OpenSubtitles 2018 (http://opus.nlpl.eu/OpenSubtitles2018.php).
   Licensed under CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/).
-  Changes: kept Arabic-letter tokens only, counts rescaled to the 120..255 range used by data.json.
+  Merged with word counts from the Leipzig Corpora Collection, corpus ara_news_2022_1M
+  (https://wortschatz.uni-leipzig.de, D. Goldhahn, T. Eckart, U. Quasthoff: Building Large Monolingual
+  Dictionaries at the Leipzig Corpora Collection, LREC 2012), licensed under CC BY 4.0.
+  Changes: kept Arabic-letter tokens seen at least 20 times, tatweel removed, top 150,000 words by the higher
+  of the two per-million frequencies, rescaled to the 120..255 range used by data.json.
+  Built with utils/build_arabic_dict.py.
 
 en_bigrams.json, ar_bigrams.json
   Next-word tables counted from the Tatoeba sentence collection (https://tatoeba.org), licensed under
   CC BY 2.0 FR (https://creativecommons.org/licenses/by/2.0/fr/). Only word pairs where both words are in the
   base dictionary are kept, at most 6 next words per word.
+  ar_bigrams.json additionally includes word pairs counted from the Leipzig corpus above (CC BY 4.0).
